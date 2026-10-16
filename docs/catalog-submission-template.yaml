@@ -1,7 +1,7 @@
 # Preparation template only. Do not submit this file as-is.
 # Replace the repository and SHA placeholders after publishing a public release.
 name: hermes-seo
-repo: "https://github.com/<OWNER>/<REPOSITORY>"
+repo: "https://github.com/yuzushi-dev/hermes-seo"
 sha: "<40-CHARACTER-RELEASE-COMMIT-SHA>"
 title: Hermes SEO
 description: >-

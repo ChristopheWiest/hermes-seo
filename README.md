@@ -2,15 +2,16 @@
 
 Hermes SEO 0.1.0 packages the SEO analysis workflows, their Python utilities, and specialist roles from [Claude SEO v2.4.2](https://github.com/AgriciDaniel/claude-seo) as a native Hermes plugin. The port keeps 25 workflow skills plus the `seo` router, 19 delegated role skills, 56 utility scripts, Schema.org templates, and optional provider integrations. Claude SEO was created by Daniel Agrici and remains attributed under its MIT license.
 
-This is an independent community port. It is not an official Nous Research or Hermes Agent plugin, and catalog inclusion has not been requested or granted.
+This is an independent community port maintained at [yuzushi-dev/hermes-seo](https://github.com/yuzushi-dev/hermes-seo). It is not an official Nous Research or Hermes Agent plugin, and catalog inclusion has not been requested or granted.
 
 ## Install locally
 
-Copy this directory to the active Hermes home at `plugins/hermes-seo`, then enable it:
+Clone the public repository, then copy the plugin directory to the active Hermes home at `plugins/hermes-seo`, then enable it:
 
 ```bash
+git clone https://github.com/yuzushi-dev/hermes-seo.git
 mkdir -p "${HERMES_HOME:-$HOME/.hermes}/plugins"
-cp -a /path/to/hermes-seo "${HERMES_HOME:-$HOME/.hermes}/plugins/hermes-seo"
+cp -a hermes-seo "${HERMES_HOME:-$HOME/.hermes}/plugins/hermes-seo"
 hermes plugins enable hermes-seo
 hermes plugins doctor hermes-seo --ci
 ```
@@ -19,7 +20,7 @@ The plugin registers namespaced skills such as `hermes-seo:seo-audit` and `herme
 
 `hermes seo setup` creates a private virtual environment and downloads pinned Python packages; browser setup also downloads Chromium. It may use substantial disk space. Run it only when asked. `hermes seo doctor --json` checks readiness without changing the system. Use `hermes_seo_run` for credentialed utilities; noncredentialed utilities may use `hermes seo run <script.py>`. Both paths use the isolated environment and script allowlist.
 
-To update this local copy, replace its plugin directory with a reviewed copy of the new version and run `hermes plugins doctor hermes-seo --ci`. No public catalog entry or release is currently provided by this port.
+To update this local copy, pull a reviewed commit in the repository and run `hermes plugins doctor hermes-seo --ci`. No public catalog entry or release is currently provided by this port.
 
 ## Compatibility
 
@@ -51,4 +52,4 @@ rtk pytest -q
 
 The source suite covers local script behavior and security boundaries. API-backed behavior needs the corresponding service account and was not validated as part of the local port.
 
-Catalog preparation metadata is available in [docs/catalog-submission-template.yaml](docs/catalog-submission-template.yaml). It is a template, not a submission: the public repository URL and final 40-character release commit SHA remain pending until a release exists.
+Catalog preparation metadata is available in [docs/catalog-submission-template.yaml](docs/catalog-submission-template.yaml). It is a template, not a submission: the final 40-character release commit SHA remains pending until a release exists.
