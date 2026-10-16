@@ -178,10 +178,8 @@ def check_runtime_invocations(texts):
         r"\b(?:python3|python|py\s+-3)\s+[^\n`]*?scripts/[A-Za-z0-9_./-]+\.py"
     )
     raw_path = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
-    # The canonical form is "${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run <script>,
-    # so the closing quote may sit between the launcher name and the subcommand.
     runtime = re.compile(
-        r"claude-seo[\"']?\s+run(?:\s+--extension\s+[a-z0-9-]+)?\s+([A-Za-z0-9_-]+\.py)"
+        r"\bhermes\s+seo\s+run(?:\s+--extension\s+[a-z0-9-]+)?\s+([A-Za-z0-9_-]+\.py)"
     )
     for f in carriers:
         content = read(f)
@@ -190,7 +188,7 @@ def check_runtime_invocations(texts):
         for script in sorted(set(raw_path.findall(content))):
             errors.append(
                 f"{f}: unsupported raw script path scripts/{script}; "
-                f'use "${{CLAUDE_PLUGIN_ROOT}}/scripts/claude-seo" run {script}'
+                f'use `hermes seo run {script}`'
             )
         for script in sorted(set(runtime.findall(content))):
             if not os.path.isfile(os.path.join(REPO, "scripts", script)) and not any(
@@ -226,11 +224,8 @@ def check_agent_refs(files, texts):
 
     Path-aware, like the script-reference check: an agent resolves against the
     repo-root ``agents/`` tree, and additionally against any extension's own
-    ``extensions/<ext>/agents/`` tree. Extension-supplied agents
-    (``seo-matomo``) ship only inside their extension and are copied into
-    ``~/.claude/agents/`` at install time, so a mention of them is live, not
-    dead. Extensions whose agent is mirrored into the core tree
-    (``seo-dataforseo``, ``seo-image-gen``) resolve either way.
+    ``extensions/<ext>/agents/`` tree. Hermes role skills are registered
+    from ``skills/role-seo-*`` and are not copied into an external directory.
     """
     agents = {os.path.basename(f)[:-3] for f in files
               if f.startswith("agents/") and f.endswith(".md")}

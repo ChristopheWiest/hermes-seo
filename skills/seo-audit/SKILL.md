@@ -1,43 +1,42 @@
 ---
 name: seo-audit
-description: "Run a full-site SEO audit and return a scored, prioritized report. Use only for site-wide checks; use seo-page for one URL or seo-technical for a technical-only review."
-user-invocable: true
-argument-hint: "[url]"
+description: "Run full-site SEO audits and prioritize evidence-backed findings."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Full Website SEO Audit
 
 ## Process
 
-1. **Render homepage**: use `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run render_page.py <url> --mode auto --json` to capture raw HTML, rendered HTML, extracted text, SPA status, and accessibility data when needed
-2. **Detect business type**: analyze homepage signals per seo orchestrator
-3. **Crawl site**: follow internal links up to 500 pages, respect robots.txt
-4. **Delegate to subagents** (if available, otherwise run inline sequentially):
-   - `seo-technical` -- robots.txt, sitemaps, canonicals, Core Web Vitals, security headers
-   - `seo-content` -- E-E-A-T, readability, thin content, AI citation readiness
-   - `seo-schema` -- detection, validation, generation recommendations
-   - `seo-sitemap` -- structure analysis, quality gates, missing pages
-   - `seo-performance` -- LCP, INP, CLS measurements
-   - `seo-visual` -- screenshots, mobile testing, above-fold analysis
-   - `seo-geo` -- AI crawler access, llms.txt, citability, brand mention signals
-   - `seo-agentic` -- Lighthouse Agentic Browsing fraction (X/N), accessibility tree for agents, AI agent access policy, Markdown and discovery files, WebMCP (always include in full audits; its findings feed AI Search Readiness)
-   - `seo-local` -- GBP signals, NAP consistency, reviews, local schema, industry-specific local factors (spawn when Local Service industry detected: brick-and-mortar, SAB, or hybrid business type)
-   - `seo-maps` -- Geo-grid rank tracking, GBP audit, review intelligence, competitor radius mapping (spawn when Local Service detected AND DataForSEO MCP available)
-   - `seo-google` -- CWV field data (CrUX), URL indexation (GSC), organic traffic (GA4) (spawn when Google API credentials detected via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_auth.py --check`)
-   - `seo-matomo` -- Matomo Reporting API: organic traffic, landing pages, device / country splits, referrer analysis (spawn when Matomo credentials detected via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py --check`; runs alongside `seo-google` when both are configured, or as a GA4 alternative when GA4 is not)
-   - `seo-backlinks` -- Backlink profile data: DA/PA, referring domains, anchor text, toxic links (spawn when Moz or Bing API credentials detected via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check`, or always include Common Crawl domain-level metrics)
-   - `seo-cluster` -- Semantic clustering analysis (spawn when content strategy signals detected: blog, pillar pages, topic clusters)
-   - `seo-sxo` -- Search experience analysis: page-type mismatch, user stories, persona scoring (always include in full audits)
-   - `seo-drift` -- Drift analysis: compare against stored baseline (spawn when drift baseline exists for the URL via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_history.py <url>`)
-   - `seo-ecommerce` -- Product schema, marketplace intelligence (spawn when E-commerce industry detected)
-5. **Score** -- aggregate into SEO Health Score (0-100)
-6. **Persist audit artifacts** -- write all outputs under `{domain}-audit/`
-7. **Report** -- generate prioritized action plan and optional PDF/HTML report
+1. **Render homepage** with `hermes seo run render_page.py <url> --mode auto --json` to capture raw HTML, rendered HTML, extracted text, SPA status, and accessibility data when needed.
+2. **Detect business type** from homepage signals and crawl context (SaaS, local, ecommerce, publisher, agency, or other).
+3. **Crawl the site** up to 500 pages, respecting robots.txt.
+4. **Delegate independent specialist tasks** with Hermes `delegate_task` when available; otherwise load the same role skills and run the workflows inline, sequentially. `delegate_task` children start with fresh context, so include the site URL, relevant crawl/evidence paths, output directory, and exact role skill in every task's `context`. Load a role with `skill_view(name="hermes-seo:role-seo-<role>")`. Hermes allows up to 10 concurrent children by default; split larger sets into batches.
+
+   Example for two independent roles:
+
+   ```python
+   delegate_task(tasks=[
+       {
+           "goal": "Audit technical SEO for example.com",
+           "context": "Load hermes-seo:role-seo-technical with skill_view. Site URL: https://example.com. Crawl evidence: example.com-audit/crawl/. Write findings to example.com-audit/findings/technical.md and return evidence, recommendations, and limitations."
+       },
+       {
+           "goal": "Audit schema markup for example.com",
+           "context": "Load hermes-seo:role-seo-schema with skill_view. Site URL: https://example.com. Crawl evidence: example.com-audit/crawl/. Write findings to example.com-audit/findings/schema.md and return evidence, recommendations, and limitations."
+       }
+   ])
+   ```
+
+   Delegate these baseline roles in full audits when available: `hermes-seo:role-seo-technical` (robots.txt, sitemaps, canonicals, CWV, security headers), `hermes-seo:role-seo-content` (E-E-A-T, readability, thin content, AI citation readiness), `hermes-seo:role-seo-schema` (detection, validation, generation recommendations), `hermes-seo:role-seo-sitemap` (structure, quality gates, missing pages), `hermes-seo:role-seo-performance` (LCP, INP, CLS), `hermes-seo:role-seo-visual` (screenshots, mobile, above-fold), `hermes-seo:role-seo-geo` (AI crawler access, llms.txt, citability, brand mentions), `hermes-seo:role-seo-agentic` (Lighthouse Agentic Browsing fraction, agent accessibility, discovery files, WebMCP), and `hermes-seo:role-seo-sxo` (page-type mismatch, user stories, persona scoring; always include).
+
+   Add conditional roles when their triggers apply: `hermes-seo:role-seo-local` for local businesses; `hermes-seo:role-seo-maps` for local businesses when DataForSEO MCP is available; `hermes-seo:role-seo-google` when Google credentials are configured and the user approves API use; `hermes-seo:role-seo-backlinks` when backlink credentials are configured and their use is approved (or for Common Crawl domain-level metrics); `hermes-seo:role-seo-cluster` when blog, pillar-page, or topic-cluster signals appear; `hermes-seo:role-seo-drift` when a baseline exists; and `hermes-seo:role-seo-ecommerce` for ecommerce sites. `hermes-seo:role-seo-dataforseo` may enrich the audit when DataForSEO MCP is available and the user approves live API use. `hermes-seo:role-seo-image-gen` may audit image strategy when Banana MCP is available; it produces a plan and never generates images. For FLOW-based content strategy, use `hermes-seo:role-seo-flow`.
+
+   Matomo has no dedicated role skill in this package. When Matomo is configured and the user approves its use, run its reporting workflow inline; it can complement Google data or serve as a GA4 alternative. Do not attempt paid endpoints or send data to external providers without the user's explicit approval for that operation.
+5. **Score** and aggregate findings into an SEO Health Score (0-100).
+6. **Persist audit artifacts** under `{domain}-audit/`.
+7. **Report** a prioritized action plan and offer the optional PDF/HTML report.
 
 ## Crawl Configuration
 
@@ -57,11 +56,11 @@ Delay between requests: 1 second
 - `{domain}-audit/audit-data.json`: Structured audit envelope for report generation
 - `{domain}-audit/findings/*.md`: Per-category specialist findings (`technical.md`, `content.md`, `schema.md`, `performance.md`, `visual.md`, etc.)
 - `{domain}-audit/screenshots/`: Desktop + mobile captures (if Playwright available)
-- **PDF Report** (recommended): Generate a professional A4 PDF using `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_report.py --type full --data {domain}-audit/audit-data.json --domain <domain> --output-dir {domain}-audit/`. This produces a white-cover enterprise report with TOC, executive summary, charts (Lighthouse gauges, query bars, index donut), metric cards, threshold tables, prioritized recommendations with effort estimates, and implementation roadmap. Always offer PDF generation after completing an audit.
+- **PDF Report** (recommended): Generate a professional A4 PDF using `hermes seo run google_report.py --type full --data {domain}-audit/audit-data.json --domain <domain> --output-dir {domain}-audit/`. This produces a white-cover enterprise report with TOC, executive summary, charts (Lighthouse gauges, query bars, index donut), metric cards, threshold tables, prioritized recommendations with effort estimates, and implementation roadmap. Always offer PDF generation after completing an audit.
 
 ## Structured Audit Data Envelope
 
-Write `{domain}-audit/audit-data.json` with this shape so `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_report.py --type full --data {domain}-audit/audit-data.json --domain <domain> --output-dir {domain}-audit/` can generate a report even when Google API data is unavailable:
+write_file `{domain}-audit/audit-data.json` with this shape so `hermes seo run google_report.py --type full --data {domain}-audit/audit-data.json --domain <domain> --output-dir {domain}-audit/` can generate a report even when Google API data is unavailable:
 
 ```json
 {
@@ -168,15 +167,15 @@ Write `{domain}-audit/audit-data.json` with this shape so `"${CLAUDE_PLUGIN_ROOT
 
 ## DataForSEO Integration (Optional)
 
-If DataForSEO MCP tools are available, spawn the `seo-dataforseo` agent alongside existing subagents to enrich the audit with live data: real SERP positions, backlink profiles with spam scores, on-page analysis (Lighthouse), business listings, and AI visibility checks (ChatGPT scraper, LLM mentions).
+If DataForSEO MCP tools are available and the user approves live API use, delegate `hermes-seo:role-seo-dataforseo` alongside the other roles to enrich the audit with real SERP positions, backlink profiles with spam scores, on-page analysis (Lighthouse), business listings, and AI visibility checks (ChatGPT scraper, LLM mentions).
 
 ## Google API Integration (Optional)
 
-If Google API credentials are configured (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_auth.py --check`), spawn the `seo-google` agent to enrich the audit with real Google field data: CrUX Core Web Vitals (replaces lab-only estimates), GSC URL indexation status, search performance (clicks, impressions, CTR), and GA4 organic traffic trends. The Performance (CWV) category score benefits most from field data.
+If `GOOGLE_API_KEY` is available (`hermes_seo_run {"script":"google_auth.py","args":["--check"]}`) and the user approves the external request, delegate `hermes-seo:role-seo-google` for PageSpeed and CrUX field data. GSC, GA4, Google Ads, and Indexing API remain disabled in this catalog build.
 
 ## Matomo Integration (Optional)
 
-If Matomo credentials are configured (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py --check`), spawn the `seo-matomo` agent to enrich the audit with self-hosted analytics: organic visits trend, top landing pages, device and country breakdowns, channel / search-engine split, and organic keywords. Works as a GA4 alternative (when only Matomo is configured) or as a complement (when both GA4 and Matomo are present). Matomo numbers will not match GA4 exactly because of segmentation differences (`referrerType==search` vs `sessionDefaultChannelGroup == "Organic Search"`) and attribution-window rules.
+If Matomo vault values are configured (`hermes_seo_run {"script":"matomo_auth.py","args":["--check"]}`) and the user approves the external request, run the Matomo extension reporting workflow inline to enrich the audit with self-hosted analytics; there is no Matomo role skill in this package. Matomo is the available analytics route while GA4 OAuth is disabled.
 
 ## Google Update Correlation
 
@@ -184,7 +183,7 @@ Before attributing a traffic or ranking change to anything, list the confirmed
 Google updates in that window from the primary-source ledger:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run seo_updates.py --since <yyyy-mm> --json
+hermes seo run seo_updates.py --since <yyyy-mm> --json
 ```
 
 Every entry cites a Google-owned URL. If `freshness.stale` is true, say the
@@ -199,4 +198,4 @@ drawing conclusions. A date overlap is a hypothesis, never proof of cause.
 | robots.txt blocks crawling | Report which paths are blocked. Analyze only accessible pages and note the limitation in the report. |
 | Rate limiting (429 responses) | Back off and reduce concurrent requests. Report partial results with a note on which sections could not be completed. |
 | Timeout on large sites (500+ pages) | Cap the crawl at the timeout limit. Report findings for pages crawled and estimate total site scope. |
-| Subagent hits its `maxTurns` budget on a large site | Findings are not lost: every audit subagent writes a partial `output_dir/findings/*.md` after its first analysis pass and overwrites it with the complete findings before finishing. Read whatever findings file exists and merge it into the report, noting it may be partial. |
+| A delegated role reaches its `max_iterations` limit on a large site | Findings are not lost: pass `output_dir/findings/<role>.md` in each task context and ask the child to write its first-pass findings there, then update the file before finishing. Use `read_file` to inspect any existing findings file and merge it into the report, noting when results may be partial. |

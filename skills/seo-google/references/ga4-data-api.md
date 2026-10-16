@@ -137,48 +137,11 @@ Up to 4 date ranges per request (for period-over-period comparison).
 
 Set `returnPropertyQuota: true` to monitor consumption. Simple reports cost ~1-10 tokens; complex ones up to ~100.
 
-## Python Example
+## Catalog-build availability
 
-```python
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import (
-    DateRange, Dimension, Filter, FilterExpression,
-    Metric, OrderBy, RunReportRequest,
-)
-from google.oauth2 import service_account
-
-credentials = service_account.Credentials.from_service_account_file(
-    "service_account.json",
-    scopes=["https://www.googleapis.com/auth/analytics.readonly"],
-)
-
-client = BetaAnalyticsDataClient(credentials=credentials)
-
-request = RunReportRequest(
-    property="properties/123456789",
-    dimensions=[Dimension(name="landingPage")],
-    metrics=[Metric(name="sessions"), Metric(name="totalUsers")],
-    date_ranges=[DateRange(start_date="28daysAgo", end_date="yesterday")],
-    dimension_filter=FilterExpression(
-        filter=Filter(
-            field_name="sessionDefaultChannelGroup",
-            string_filter=Filter.StringFilter(
-                match_type=Filter.StringFilter.MatchType.EXACT,
-                value="Organic Search",
-            ),
-        )
-    ),
-    order_bys=[OrderBy(metric=OrderBy.MetricOrderBy(metric_name="sessions"), desc=True)],
-    limit=50,
-    return_property_quota=True,
-)
-
-response = client.run_report(request)
-for row in response.rows:
-    print(f"{row.dimension_values[0].value}: {row.metric_values[0].value} sessions")
-```
-
-## Authentication
-- **Scope:** `https://www.googleapis.com/auth/analytics.readonly`
-- Service account must have **Viewer** role in GA4 property
-- Add via GA4 Admin > Property Access Management
+GA4 is unavailable in this catalog build because Hermes 0.22.2 does not expose
+an approved profile-scoped Google OAuth route. The API schema above is retained
+as reference material only. Do not create or load service-account files, use
+Application Default Credentials, start a browser OAuth flow, or invoke the
+retained GA4 script. Re-enable this workflow only after Hermes provides an
+approved broker and the plugin is reviewed against it.

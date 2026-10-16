@@ -1,18 +1,8 @@
 ---
 name: seo-programmatic
-description: >
-  Programmatic SEO planning and analysis for pages generated at scale from data
-  sources. Covers template engines, URL patterns, internal linking automation,
-  thin content safeguards, and index bloat prevention. Use when user says
-  "programmatic SEO", "pages at scale", "dynamic pages", "template pages",
-  "generated pages", or "data-driven SEO".
-user-invocable: true
-argument-hint: "[url or plan]"
+description: "Plan scalable page systems for programmatic SEO."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Programmatic SEO Analysis & Planning
@@ -116,7 +106,7 @@ Unique content % = (words unique to this page) / (total words on page) × 100
 
 Measure against all other pages in the programmatic set. Shared headers, footers, and navigation are excluded from the calculation. Template boilerplate text IS included.
 
-**Metadata is scored separately.** This calculation covers body copy only, so a set that passes it can still carry one generated title/description shape on every URL. Run `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run metadata_template.py --pairs-file <file> --json` (heuristic, deterministic string comparison) over the whole set and treat a `site_risk` of `high` as a gate failure regardless of body uniqueness.
+**Metadata is scored separately.** This calculation covers body copy only, so a set that passes it can still carry one generated title/description shape on every URL. Run `hermes seo run metadata_template.py --pairs-file <file> --json` (heuristic, deterministic string comparison) over the whole set and treat a `site_risk` of `high` as a gate failure regardless of body uniqueness.
 
 ## Canonical Strategy
 

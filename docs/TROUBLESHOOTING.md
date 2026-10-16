@@ -1,215 +1,39 @@
 # Troubleshooting
 
-## Common Issues
+## Plugin is missing
 
-### Skill Not Loading
-
-**Symptom:** `/seo` command not recognized
-
-**Solutions:**
-
-For plugin installs, verify and reinstall through Claude Code:
-```bash
-/plugin list
-/plugin marketplace add AgriciDaniel/claude-seo
-/plugin install claude-seo@agricidaniel-claude-seo
-```
-
-For manual installs:
-
-1. Verify installation:
-```bash
-ls ~/.claude/skills/seo/SKILL.md
-```
-
-2. Check SKILL.md has proper frontmatter:
-```bash
-head -5 ~/.claude/skills/seo/SKILL.md
-```
-Should start with `---` followed by YAML.
-
-3. Restart Claude Code:
-```bash
-claude
-```
-
-4. Re-run installer:
-
-Caution: Prefer downloading, inspecting, then running remote scripts; the pipe-to-shell form below is the less-safe convenience option.
+Check that the plugin is enabled and valid:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AgriciDaniel/claude-seo/main/install.sh | bash
+hermes plugins list
+hermes plugins validate "${HERMES_HOME:-$HOME/.hermes}/plugins/hermes-seo"
+hermes plugins doctor hermes-seo --ci
 ```
 
----
+If the checkout is elsewhere, pass its actual path to `plugins validate`. Then use Hermes `skills_list` to confirm the namespaced skills are registered.
 
-### Python Dependency Errors
-
-**Symptom:** `ModuleNotFoundError: No module named 'requests'`
-
-**Solution:**
-
-Dependencies belong in the managed runtime. For a plugin install, run:
+## Script runtime is not ready
 
 ```bash
-/seo doctor
-/seo setup
+hermes seo doctor --json
 ```
 
-For a manual install, run:
-```bash
-~/.claude/skills/seo/scripts/claude-seo doctor
-~/.claude/skills/seo/scripts/claude-seo setup
-```
+If dependencies or the browser are missing, run `hermes seo setup` when you want to download them. This writes to Hermes plugin data storage, not system Python. If setup fails, retain its error output and check Python/venv availability, disk space, and network access to package and browser sources.
 
-Do not install individual packages, use `pip --user`, or create a PATH shim.
+Run utilities through `hermes seo run <script.py> [args...]`; direct Python invocation bypasses the supported runtime contract and may fail due to missing dependencies.
 
-### requirements.txt Not Found
+## Provider tools are unavailable
 
-**Symptom:** `No such file: requirements.txt` after install
+A bundled skill does not install or configure an MCP server. Check that the provider's Hermes-compatible server is configured and enabled in Hermes, then consult that provider's current setup documentation. Keep credentials in Hermes' secret/config mechanism, not in this repository. Local plugin validation does not test external accounts or services.
 
-**Solution:** For plugin installs, reinstall the plugin first:
+## Request fails or times out
 
-```bash
-/plugin install claude-seo@agricidaniel-claude-seo
-```
+Check the target site's availability and network access. Some sites block automated requests or require browser rendering. Use the relevant workflow's options and report which data sources were unavailable rather than inferring missing data.
 
-For manual installs, requirements.txt is copied to the skill directory:
+## Schema feedback
 
-```bash
-ls ~/.claude/skills/seo/requirements.txt
-```
+The JSON-LD hook is advisory: it adds findings after a file-write tool returns and does not block or roll back the write. Check the returned findings and validate the markup with the appropriate current external validator.
 
-If missing, download it directly:
-```bash
-curl -fsSL https://raw.githubusercontent.com/AgriciDaniel/claude-seo/main/requirements.txt \
-  -o ~/.claude/skills/seo/requirements.txt
-```
+## Get diagnostics
 
-### Windows Python Detection Issues
-
-**Symptom:** `python is not recognized` or `pip points to wrong Python`
-
-**Solution (v1.2.0+):** The Windows installer now tries both `python` and `py -3`. If both fail:
-
-1. Install Python from [python.org](https://python.org) and check "Add to PATH"
-2. Rerun `install.ps1`; it resolves `py -3`, `python3`, then `python`
-3. Run `/seo doctor` after installation
-
----
-
-### Playwright Screenshot Errors
-
-**Symptom:** `playwright._impl._errors.Error: Executable doesn't exist`
-
-**Solution:** rerun managed setup so the browser is installed through the same
-interpreter and persistent browser directory:
-```bash
-/seo setup
-/seo doctor
-```
-
----
-
-### Permission Denied Errors
-
-**Symptom:** `Permission denied` when running scripts
-
-**Solution:**
-```bash
-chmod +x ~/.claude/skills/seo/scripts/*.py
-```
-
----
-
----
-
-### Subagent Not Found
-
-**Symptom:** `Agent 'seo-technical' not found`
-
-**Solution:**
-
-For plugin installs, check `/plugin list` and reinstall `claude-seo@agricidaniel-claude-seo`; subagents load from the plugin, not `~/.claude/agents/`.
-
-For manual installs:
-
-1. Verify agent files exist:
-```bash
-ls ~/.claude/agents/seo-*.md
-```
-
-2. Check agent frontmatter:
-```bash
-head -5 ~/.claude/agents/seo-technical.md
-```
-
-3. Re-install agents:
-```bash
-cp /path/to/claude-seo/agents/*.md ~/.claude/agents/
-```
-
----
-
-### Timeout Errors
-
-**Symptom:** `Request timed out after 30 seconds`
-
-**Solutions:**
-
-1. The target site may be slow: try again
-2. Increase timeout in script calls
-3. Check your network connection
-4. Some sites block automated requests
-
----
-
-### Schema Validation False Positives
-
-**Symptom:** Hook blocks valid schema
-
-**Check:**
-
-1. Ensure placeholders are replaced
-2. Verify @context is `https://schema.org`
-3. Check for deprecated/retired types: HowTo and SpecialAnnouncement, plus the June 2025 retirements (ClaimReview, VehicleListing, EstimatedSalary, LearningVideo, and the CourseInfo carousel)
-4. FAQPage rich results were retired for all sites on 2026-05-07. The hook does not block it because it remains a valid Schema.org type, but no AI or ranking benefit is confirmed.
-5. Validate at [Google's Rich Results Test](https://search.google.com/test/rich-results)
-
----
-
-### Slow Audit Performance
-
-**Symptom:** Full audit takes too long
-
-**Solutions:**
-
-1. Audit crawls up to 500 pages: large sites take time
-2. Subagents run in parallel to speed up analysis
-3. For faster checks, use `/seo page` on specific URLs
-4. Check if site has slow response times
-
----
-
-## Getting Help
-
-1. **Check the docs:** Review [COMMANDS.md](COMMANDS.md) and [ARCHITECTURE.md](ARCHITECTURE.md)
-
-2. **GitHub Issues:** Report bugs at the repository
-
-3. **Logs:** Check Claude Code's output for error details
-
-## Debug Mode
-
-To see detailed output, check Claude Code's internal logs or run scripts directly:
-
-```bash
-# Test fetch
-python3 ~/.claude/skills/seo/scripts/fetch_page.py https://example.com
-
-# Test parse
-python3 ~/.claude/skills/seo/scripts/parse_html.py page.html --json
-
-# Test screenshot
-python3 ~/.claude/skills/seo/scripts/capture_screenshot.py https://example.com
-```
+Capture the command, Hermes version, and relevant error output. Remove tokens and other secrets before sharing logs. Historical source-project issues may be useful background, but Claude Code installer paths and settings do not apply to this Hermes port.

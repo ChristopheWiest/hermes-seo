@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Matomo credential management for Claude SEO.
+Matomo credential management for Hermes SEO.
 
-Loads and validates credentials for the Matomo Reporting API.
-Supports config file and environment variable fallbacks.
+Loads injected credentials for the Matomo Reporting API.
 
 Usage:
     python matomo_auth.py --check                  # Check credentials (live probe)
@@ -18,9 +17,7 @@ import json
 import os
 import re
 import socket
-import subprocess
 import sys
-import tempfile
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -41,21 +38,9 @@ from url_safety import (  # noqa: E402  (path bootstrap must run first)
     safe_requests_session,
 )
 
-try:
-    # Reuse the shared legacy-permission remediation helper rather than
-    # duplicating it. It is path/mode-generic, as backlinks_auth.py already
-    # relies on.
-    from google_auth import _chmod_quiet  # noqa: E402
-except ImportError as _import_exc:  # pragma: no cover - hard dependency
-    raise RuntimeError(
-        "scripts/google_auth.py is required alongside matomo_auth.py. "
-        "Install with: pip install -r requirements.txt"
-    ) from _import_exc
-
-CONFIG_PATH = os.path.expanduser("~/.config/claude-seo/matomo.json")
 DEFAULT_TIMEOUT = 15
-USER_AGENT = "ClaudeSEO/2.3.0"
-LOCAL_TARGETS_ENV = "CLAUDE_SEO_LOCAL_TARGETS"
+USER_AGENT = "HermesSEO/2.3.0"
+LOCAL_TARGETS_ENV = "HERMES_SEO_LOCAL_TARGETS"
 
 _SECRET_RE = re.compile(r"(token_auth|token|password)=[^\s&\"']+", re.IGNORECASE)
 
@@ -70,143 +55,19 @@ def redact(text: str) -> str:
     return _SECRET_RE.sub(r"\1=<redacted>", str(text))
 
 
-def _restrict_to_current_user_windows(path: str) -> None:
-    """Best-effort Windows ACL restriction to the current user (issue #290).
-
-    POSIX mode bits are meaningless on NTFS, so ``icacls`` is the closest
-    equivalent. Mirrors ``backlinks_auth._restrict_to_current_user_windows``;
-    failures are warnings, never fatal, and POSIX never reaches this function.
-    """
-    if os.name != "nt":
-        return
-    user = os.environ.get("USERNAME", "").strip()
-    if not user:
-        print(
-            f"Warning: USERNAME is not set; could not restrict {path} to the current user",
-            file=sys.stderr,
-        )
-        return
-    try:
-        result = subprocess.run(
-            ["icacls", path, "/inheritance:r", "/grant:r", f"{user}:F"],
-            check=False, capture_output=True, text=True, timeout=10,
-        )
-        if result.returncode != 0:
-            detail = (result.stderr or result.stdout or "").strip()
-            print(
-                f"Warning: icacls could not restrict {path} to {user} "
-                f"(exit {result.returncode}): {detail}",
-                file=sys.stderr,
-            )
-    except Exception as exc:  # best-effort hardening only; never fatal
-        print(
-            f"Warning: could not restrict {path} to the current user via icacls: {exc}",
-            file=sys.stderr,
-        )
-
-
-def _write_secure_json(path: str, data: dict) -> None:
-    """Write ``data`` to ``path`` as 0600 JSON, atomically.
-
-    The permission half is ``backlinks_auth._write_secure_json``'s pattern:
-    pre-chmod an existing file (closes a legacy umask=022 window), create with
-    an explicit 0600 mode, then ``fchmod`` the open fd to force 0600 even if
-    the file pre-existed, which defeats the exists()/open() TOCTOU race. On
-    Windows, a best-effort ``icacls`` pass, since the mode bits are a no-op
-    there.
-
-    The atomic half is this file's addition: the token is written to a
-    same-directory temp file and ``os.replace``d into position, so a crash or
-    a concurrent reader never sees a half-written credential file, and a
-    failed write leaves the previous credentials intact rather than truncated.
-    The temp file is 0600 from creation, so the token is never world-readable
-    even for the instant it exists under the temp name.
-    """
-    directory = os.path.dirname(path) or "."
-    os.makedirs(directory, exist_ok=True)
-    if os.path.exists(path):
-        _chmod_quiet(path, 0o600)
-
-    fd, tmp = tempfile.mkstemp(dir=directory, prefix=".matomo.", suffix=".json")
-    try:
-        fchmod = getattr(os, "fchmod", None)
-        if fchmod is not None:
-            try:
-                fchmod(fd, 0o600)
-            except OSError:
-                pass  # FS may not support fchmod (some Windows filesystems)
-        with os.fdopen(fd, "w") as fh:
-            json.dump(data, fh, indent=2)
-            fh.flush()
-            os.fsync(fh.fileno())
-        _chmod_quiet(tmp, 0o600)
-        os.replace(tmp, path)
-    except BaseException:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
-    _restrict_to_current_user_windows(path)
-
-
-def save_config(config: dict) -> None:
-    """Persist Matomo credentials to CONFIG_PATH with hardened permissions.
-
-    Only the keys this module reads are written, and empty values are dropped
-    so an optional field left blank at install time does not shadow an
-    environment variable later.
-    """
-    payload = {k: v for k, v in config.items()
-               if k in ("matomo_url", "matomo_token", "matomo_site_id")
-               and v not in (None, "")}
-    _write_secure_json(CONFIG_PATH, payload)
-
-
 def load_config() -> dict:
-    """
-    Load configuration from config file with environment variable fallbacks.
-
-    Reads ~/.config/claude-seo/matomo.json first. Any missing fields
-    are filled from environment variables.
-
-    Returns:
-        Dictionary with keys: matomo_url, matomo_token, matomo_site_id.
-    """
-    config = {
-        "matomo_url": None,
-        "matomo_token": None,
-        "matomo_site_id": None,
-    }
-
-    if os.path.exists(CONFIG_PATH):
-        # A file written by an older installer (or copied in by hand) may be
-        # world-readable; tighten it before reading the token out of it.
-        _chmod_quiet(CONFIG_PATH, 0o600)
-        _restrict_to_current_user_windows(CONFIG_PATH)
-        try:
-            with open(CONFIG_PATH, "r") as f:
-                file_config = json.load(f)
-            for k, v in file_config.items():
-                if v is not None and v != "":
-                    config[k] = v
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not read config file: {e}", file=sys.stderr)
-
-    if not config["matomo_url"]:
-        config["matomo_url"] = os.environ.get("MATOMO_URL")
-    if not config["matomo_token"]:
-        config["matomo_token"] = (
+    """Return only values supplied by the Hermes child environment."""
+    return {
+        "matomo_url": os.environ.get("MATOMO_URL"),
+        "matomo_token": (
             os.environ.get("MATOMO_API_TOKEN")
             or os.environ.get("MATOMO_TOKEN")
-        )
-    if not config["matomo_site_id"]:
-        config["matomo_site_id"] = (
+        ),
+        "matomo_site_id": (
             os.environ.get("MATOMO_SITE_ID")
             or os.environ.get("MATOMO_IDSITE")
-        )
-
-    return config
+        ),
+    }
 
 
 def _normalize_instance_url(url: str) -> Optional[str]:
@@ -215,8 +76,8 @@ def _normalize_instance_url(url: str) -> Optional[str]:
     Shape only: scheme, host, no userinfo, no trailing slash. Whether the
     instance may actually be contacted is decided by ``url_safety`` at request
     time (see :func:`instance_endpoint` and :func:`post_to_instance`), which is
-    the single place in claude-seo that reads
-    ``CLAUDE_SEO_LOCAL_TARGETS``. Deciding it here as well would put a second,
+    the single place in hermes-seo that reads
+    ``HERMES_SEO_LOCAL_TARGETS``. Deciding it here as well would put a second,
     divergent SSRF policy in the tree.
 
     Returns:
@@ -257,7 +118,7 @@ def resolves_to_private_address(url: str) -> bool:
     """True when the instance URL's host resolves to a non-public address.
 
     Used by the installers to decide whether to print the
-    ``CLAUDE_SEO_LOCAL_TARGETS`` hint. Best-effort: a host that does not
+    ``HERMES_SEO_LOCAL_TARGETS`` hint. Best-effort: a host that does not
     resolve at all is not reported as private.
     """
     normalized = _normalize_instance_url(url)
@@ -295,7 +156,7 @@ def post_to_instance(endpoint: str, data: dict,
 
     Every outbound request to the user's Matomo instance goes through here.
     ``safe_requests_session`` validates the endpoint with
-    ``validate_url_strict`` (which consults ``CLAUDE_SEO_LOCAL_TARGETS`` for
+    ``validate_url_strict`` (which consults ``HERMES_SEO_LOCAL_TARGETS`` for
     this top-level URL) and pins the hostname to the validated address for the
     life of the session, so the address cannot be re-bound between validation
     and connect.
@@ -415,8 +276,8 @@ def check_credentials() -> dict:
             "instance": raw_url,
             "site_id": site_id,
             "error": (
-                "No Matomo URL configured or URL is invalid. Set MATOMO_URL environment variable "
-                f"or add 'matomo_url' to {CONFIG_PATH}. URL must start with http:// or https://."
+                "No Matomo URL configured or URL is invalid. Set MATOMO_URL through Hermes. "
+                "URL must start with http:// or https://."
             ),
         }
     if not token:
@@ -426,8 +287,7 @@ def check_credentials() -> dict:
             "instance": url,
             "site_id": site_id,
             "error": (
-                "No Matomo token_auth configured. Set MATOMO_API_TOKEN environment variable "
-                f"or add 'matomo_token' to {CONFIG_PATH}."
+                "No Matomo token_auth was injected. Set MATOMO_API_TOKEN through Hermes."
             ),
         }
 
@@ -481,7 +341,7 @@ def detect_tier() -> dict:
         "description": "No Matomo credentials",
         "capabilities": [],
         "missing": (
-            "Configure Matomo via extensions/matomo/install.sh to unlock "
+            "Use hermes_seo_run with the active Hermes profile's Matomo settings to unlock "
             "organic traffic, top landing pages, device and country breakdowns, "
             "and referrer analysis. Works alongside GA4 or as a replacement."
         ),
@@ -525,23 +385,14 @@ TIER 1: MATOMO REPORTING API (one token, your own instance)
 
   1. Log in to your Matomo instance as a Super User or Admin
   2. Go to Administration -> Personal -> Security -> API Tokens
-  3. Click "Create a new token". Give it a meaningful name (e.g. "claude-seo")
+  3. Click "Create a new token". Give it a meaningful name (e.g. "hermes-seo")
      and at least "view" access on the sites you want to analyze
   4. Copy the generated token_auth (a 32-character hex string)
 
-  Configure via env (recommended for shared machines):
-
-    export MATOMO_URL="https://analytics.example.com"
-    export MATOMO_API_TOKEN="abc123...32hex"
-    export MATOMO_SITE_ID="1"
-
-  Or save to {CONFIG_PATH}:
-
-    {{
-      "matomo_url": "https://analytics.example.com",
-      "matomo_token": "abc123...32hex",
-      "matomo_site_id": "1"
-    }}
+  Configure profile-scoped values through Hermes secret sources:
+    MATOMO_URL, MATOMO_API_TOKEN, and optional MATOMO_SITE_ID.
+  Run the credentialed helper with the native hermes_seo_run tool; the local
+  `hermes seo` CLI does not receive profile credentials.
 
   Provides: visits, bounce rate, avg time on site, organic landing pages,
             device and country breakdowns, search-engine referral split,
@@ -549,11 +400,11 @@ TIER 1: MATOMO REPORTING API (one token, your own instance)
             privacy headers and Matomo's keyword anonymization rules).
 
   Note on self-hosted instances: every request to your Matomo instance goes
-  through claude-seo's SSRF guard, which refuses private and loopback
+  through hermes-seo's SSRF guard, which refuses private and loopback
   addresses by default. If your instance lives on such an address, name it in
-  the CLAUDE_SEO_LOCAL_TARGETS allowlist:
+  the HERMES_SEO_LOCAL_TARGETS allowlist:
 
-    export CLAUDE_SEO_LOCAL_TARGETS="matomo.internal:8080"
+    HERMES_SEO_LOCAL_TARGETS="matomo.internal:8080" (profile-scoped setting)
 
   Entries are host or host:port, comma-separated, matched exactly. The
   allowlist is consulted only for the top-level instance URL; redirects and
@@ -561,14 +412,14 @@ TIER 1: MATOMO REPORTING API (one token, your own instance)
   when listed. See SECURITY.md.
 
 VERIFY CONFIGURATION:
-  "${{CLAUDE_PLUGIN_ROOT}}/scripts/claude-seo" run matomo_auth.py --check
-  "${{CLAUDE_PLUGIN_ROOT}}/scripts/claude-seo" run matomo_auth.py --tier
+  hermes_seo_run({"script":"matomo_auth.py","args":["--check"]})
+  hermes_seo_run({"script":"matomo_auth.py","args":["--tier"]})
 """)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Matomo credential management for Claude SEO"
+        description="Matomo credential management for Hermes SEO"
     )
     parser.add_argument(
         "--check",
@@ -594,7 +445,7 @@ def main() -> int:
         "--local-target-hint",
         metavar="URL",
         help=(
-            "Print the CLAUDE_SEO_LOCAL_TARGETS line needed to reach URL when it "
+            "Print the HERMES_SEO_LOCAL_TARGETS line needed to reach URL when it "
             "resolves to a private address, and nothing otherwise. Used by the "
             "extension installers."
         ),

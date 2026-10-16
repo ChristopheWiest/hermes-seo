@@ -1,109 +1,102 @@
 ---
 name: seo
-description: "Comprehensive SEO analysis for any website or business type. Full site audits, single-page analysis, technical SEO (crawlability, indexability, Core Web Vitals with INP), schema markup, content quality (E-E-A-T), image optimization, sitemap analysis, and GEO for AI Overviews/ChatGPT/Perplexity. Industry detection for SaaS, e-commerce, local, publishers, agencies. Triggers on: SEO, audit, schema, Core Web Vitals, sitemap, E-E-A-T, AI Overviews, GEO, technical SEO, content quality, page speed. Use this hub only when the SEO domain is clear and the requested workflow is not; otherwise use the exact retained leaf or command."
-user-invocable: true
-argument-hint: "[command] [url]"
+description: "Route SEO requests to audits and specialist workflows."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
-# SEO: Universal SEO Analysis Skill
+# Hermes SEO
 
-**Invocation:** `/seo $1 $2` where `$1` is the command and `$2` is the URL or argument.
+Use this hub when a request covers several SEO areas or the user asks for a full audit. For a single area, load its matching `hermes-seo:seo-*` skill directly. The package contains 26 workflow skills and 19 specialist role skills.
 
-**Runtime:** Run bundled Python tools through
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run <script.py>`. That is the single
-canonical form used by every skill and agent. Claude Code expands
-`${CLAUDE_PLUGIN_ROOT}` to the installed plugin directory, so the launcher is
-found without any `PATH` entry; the repository ships no top-level `bin/`
-directory because hosted marketplaces reject one. Repository users run
-`./scripts/claude-seo`; manual installers rewrite the canonical form to
-`"$HOME/.claude/skills/seo/scripts/claude-seo"`. Never invoke bundled scripts
-with a bare Python interpreter.
+## Runtime and references
 
-Comprehensive SEO analysis across all industries (SaaS, local services,
-e-commerce, publishers, agencies). Orchestrates 25 sub-skills (22 core + 1 framework
-integration + 2 extension mirrors) and 19 sub-agents. A separate optional Firecrawl
-extension is also installable (see "Optional Extensions" below).
+Run offline bundled utilities through `hermes seo run <script.py>` using Hermes `terminal`. Run credentialed utilities through the native `hermes_seo_run` tool with exactly `script`, `args`, and optional `extension` fields; never put credential values in `args`. First run `hermes seo doctor --json`; if the managed environment is missing, tell the user and wait for explicit setup intent before `hermes seo setup`. The runtime keeps dependencies and browser data in Hermes plugin data storage, while credentials remain in the active profile vault. Never call bundled scripts with a bare Python interpreter.
 
-## Quick Reference
+`hermes_seo_run` starts its subprocess from the Hermes host plugin process. It
+does not inherit a Docker terminal's filesystem or network isolation, and file
+arguments may reach host paths visible to Hermes. Inspect those arguments and
+request user approval before paid, external, or mutating operations. The skill
+must request approval; the tool does not enforce that policy.
 
-| Command | What it does |
-|---------|-------------|
-| `/seo audit <url>` | Full website audit with parallel subagent delegation |
-| `/seo page <url>` | Deep single-page analysis |
-| `/seo sitemap <url or generate>` | Analyze or generate XML sitemaps |
-| `/seo schema <url>` | Detect, validate, and generate Schema.org markup |
-| `/seo images <url or optimize>` | Image SEO: on-page audit, SERP analysis, file optimization |
-| `/seo technical <url>` | Technical SEO audit (9 categories) |
-| `/seo content <url>` | E-E-A-T and content quality analysis |
-| `/seo content-brief <topic or url>` | Generate detailed SEO content brief with target keywords, outline, internal links |
-| `/seo geo <url>` | AI Overviews / Generative Engine Optimization |
-| `/seo agentic [audit\|fix\|lighthouse\|refresh] <url>` | Agent readiness: Lighthouse Agentic Browsing X/N, accessibility tree, AI agent access, llms.txt, Markdown, WebMCP |
-| `/seo plan <business-type>` | Strategic SEO planning |
-| `/seo programmatic [url\|plan]` | Programmatic SEO analysis and planning |
-| `/seo competitor-pages [url\|generate]` | Competitor comparison page generation |
-| `/seo local <url>` | Local SEO analysis (GBP, citations, reviews, map pack) |
-| `/seo maps [command] [args]` | Maps intelligence (geo-grid, GBP audit, reviews, competitors) |
-| `/seo hreflang [url]` | Hreflang/i18n SEO audit and generation |
-| `/seo google [command] [url]` | Google SEO APIs (GSC, PageSpeed, CrUX, Indexing, GA4) |
-| `/seo backlinks <url>` | Backlink profile analysis (free: Moz, Bing, CC; premium: DataForSEO) |
-| `/seo cluster <seed-keyword>` | SERP-based semantic clustering and content architecture |
-| `/seo sxo <url>` | Search Experience Optimization: page-type analysis, user stories, personas |
-| `/seo drift baseline <url>` | Capture SEO baseline for change monitoring |
-| `/seo drift compare <url>` | Compare current state to stored baseline |
-| `/seo drift history <url>` | Show drift history over time |
-| `/seo ecommerce <url>` | E-commerce SEO: product schema, marketplace intelligence |
-| `/seo matomo [command] [args]` | Matomo Reporting API: GA4 alternative or supplement (extension) |
-| `/seo firecrawl [command] <url>` | Full-site crawling and site mapping (extension) |
-| `/seo dataforseo [command]` | Live SEO data via DataForSEO (extension) |
-| `/seo image-gen [use-case] <description>` | AI image generation for SEO assets (extension) |
-| `/seo flow [stage] [url\|topic]` | FLOW framework: evidence-led prompts for Find, Leverage, Optimize, Win, or Local stages |
-| `/seo setup` | Explicitly create or refresh the isolated Python runtime and Chromium |
-| `/seo doctor` | Check runtime readiness without changing the system |
+Read a bundled reference with `skill_view(name="hermes-seo:<skill>", file_path="references/<file>.md")`, using the skill that owns the file. Do not assume a fixed `~/.hermes` path.
 
-## Runtime Setup
+Hermes tools include `skills_list`, `skill_view`, `read_file`, `write_file`, `search_files`, `terminal`, `web_search`, `web_extract`, and `delegate_task`. Discover plugin skills with `skills_list`; load them by their exact namespaced name, such as `skill_view(name="hermes-seo:seo-audit")`. Each plugin skill name is `hermes-seo:<frontmatter name>`. For specialist work, call `delegate_task` with a focused `goal` and enough `context` for a fresh child conversation, explicitly telling it to load its `hermes-seo:role-seo-*` skill. If delegation is unavailable, perform the same workflow sequentially.
 
-Run setup only when the user explicitly invokes `/seo setup` or explicitly asks
-to repair dependencies. Execute
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" setup`, report core and Chromium
-status separately, and do not fall back to global or user package installation.
-For diagnosis, execute
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" doctor --json`; its output
-intentionally omits absolute paths and environment values. If any
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run` command reports that setup is
-required, suggest `/seo setup` and do not improvise a `pip install`.
+## Workflow routing
+
+| Request | Skill |
+|---|---|
+| Full audit | `hermes-seo:seo-audit` |
+| Single page | `hermes-seo:seo-page` |
+| Technical SEO | `hermes-seo:seo-technical` |
+| Content quality / E-E-A-T | `hermes-seo:seo-content` |
+| Content brief | `hermes-seo:seo-content-brief` |
+| Schema.org | `hermes-seo:seo-schema` |
+| Sitemap | `hermes-seo:seo-sitemap` |
+| Images | `hermes-seo:seo-images` |
+| GEO / AI search | `hermes-seo:seo-geo` |
+| Local / Maps | `hermes-seo:seo-local`, `hermes-seo:seo-maps` |
+| Backlinks | `hermes-seo:seo-backlinks` |
+| Google services | `hermes-seo:seo-google` |
+| Hreflang / international | `hermes-seo:seo-hreflang` |
+| Planning / clusters | `hermes-seo:seo-plan`, `hermes-seo:seo-cluster` |
+| E-commerce / programmatic | `hermes-seo:seo-ecommerce`, `hermes-seo:seo-programmatic` |
+| Competitor pages | `hermes-seo:seo-competitor-pages` |
+| Search experience | `hermes-seo:seo-sxo` |
+| Drift monitoring | `hermes-seo:seo-drift` |
+| Agent readiness | `hermes-seo:seo-agentic` |
+| FLOW framework | `hermes-seo:seo-flow` |
+
+## Runtime setup
+
+Run `hermes seo setup` only when the user asks to set up or repair the runtime. Report core and Chromium status separately. Do not install packages globally. Setup downloads Python dependencies and a browser and may use substantial disk space; explain this before asking the user to run it. API-backed scripts require separately configured credentials. Never inspect credential files or attempt paid endpoints without the user's explicit approval for that operation.
 
 ## Orchestration Logic
 
-When the user invokes `/seo audit`, delegate to subagents in parallel:
-1. Detect business type (SaaS, local, ecommerce, publisher, agency, other)
-2. Spawn subagents: seo-technical, seo-content, seo-schema, seo-sitemap, seo-performance, seo-visual, seo-geo, seo-agentic
-3. If Google API credentials detected (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_auth.py --check`), also spawn seo-google agent
-4. If Matomo credentials detected (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py --check`), also spawn seo-matomo agent (alternative or complement to seo-google's GA4 reports)
-5. If local business detected, also spawn seo-local agent
-6. If local business detected AND DataForSEO MCP available, also spawn seo-maps agent
-7. If backlink APIs detected (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check`), also spawn seo-backlinks agent
-8. If Firecrawl MCP available, use `firecrawl_map` to discover all site URLs before analysis
-9. If content strategy signals detected (blog, pillar pages, topic clusters), also spawn seo-cluster agent
-10. If e-commerce detected, also spawn seo-ecommerce agent
-11. If drift baseline exists for this URL (`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_history.py <url>`), also spawn seo-drift agent
-12. Always include seo-sxo in full audits (search experience applies to all sites)
-13. Collect results and generate unified report with SEO Health Score (0-100)
-14. **Synthesize via the 10-principle framework** (see "Synthesis Methodology" below), walk PERCEIVE → ANALYZE → VALIDATE → ACT before bucketing findings into Critical / High / Medium / Low
-15. Create prioritized action plan with dependency sequencing + falsifiability per recommendation
-16. **Offer PDF report**: "Generate a professional PDF report? Use `/seo google report full`"
 
-For individual commands, load the relevant sub-skill directly.
-After any analysis command completes, offer to generate a PDF report via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_report.py`.
+
+For a full audit, detect business type (SaaS, local, ecommerce, publisher, agency, other), then delegate independent specialist tasks in a batch. Each task needs its own `goal` and `context`; children have no conversation history, so include the URL, crawl/output locations, relevant evidence, and the exact namespaced role skill to load. For example:
+
+```python
+delegate_task(tasks=[
+    {
+        "goal": "Audit technical SEO for example.com",
+        "context": "Load hermes-seo:role-seo-technical with skill_view. Project findings directory: example.com-audit/findings/. Inspect the supplied crawl and site evidence; write findings/technical.md and report evidence, recommendations, and limitations. Site URL: https://example.com"
+    },
+    {
+        "goal": "Audit schema markup for example.com",
+        "context": "Load hermes-seo:role-seo-schema with skill_view. Project findings directory: example.com-audit/findings/. Inspect the supplied crawl and site evidence; write findings/schema.md and report evidence, recommendations, and limitations. Site URL: https://example.com"
+    }
+])
+```
+
+1. Delegate these baseline roles when available: `hermes-seo:role-seo-technical`, `hermes-seo:role-seo-content`, `hermes-seo:role-seo-schema`, `hermes-seo:role-seo-sitemap`, `hermes-seo:role-seo-performance`, `hermes-seo:role-seo-visual`, `hermes-seo:role-seo-geo`, and `hermes-seo:role-seo-agentic`.
+2. Always delegate `hermes-seo:role-seo-sxo` in full audits; search experience applies to all sites.
+3. If a static Google API key is available and the user approves the external request (`hermes_seo_run {"script":"google_auth.py","args":["--check"]}`), delegate `hermes-seo:role-seo-google` for PageSpeed and CrUX only.
+4. If Matomo vault values are configured and the user approves the external request (`hermes_seo_run {"script":"matomo_auth.py","args":["--check"]}`), use the Matomo extension reports inline; this package has no dedicated Matomo role skill.
+5. If a local business is detected, also delegate to `hermes-seo:role-seo-local`.
+6. If a local business is detected and DataForSEO MCP is available, also delegate to `hermes-seo:role-seo-maps`.
+7. If backlink APIs are configured and the user approves their use (`hermes_seo_run {"script":"backlinks_auth.py","args":["--check"]}`), also delegate to `hermes-seo:role-seo-backlinks`.
+8. If Firecrawl MCP is available, use `firecrawl_map` to discover site URLs before analysis.
+9. If content strategy signals are detected (blog, pillar pages, topic clusters), also delegate to `hermes-seo:role-seo-cluster`.
+10. If an e-commerce site is detected, also delegate to `hermes-seo:role-seo-ecommerce`.
+11. If a drift baseline exists for the URL (`hermes seo run drift_history.py <url>`), also delegate to `hermes-seo:role-seo-drift`.
+12. If DataForSEO MCP is available and its use is approved, delegate to `hermes-seo:role-seo-dataforseo` for live SERP, keyword, backlink, listings, and AI visibility data.
+13. If Banana MCP is available, delegate to `hermes-seo:role-seo-image-gen` for an image audit and generation plan; it must never generate images during an audit.
+14. For FLOW prompt-based content strategy workflows, delegate to `hermes-seo:role-seo-flow`.
+15. Collect results and generate a unified report with SEO Health Score (0-100).
+16. **Synthesize via the 10-principle framework** (see "Synthesis Methodology" below), walk PERCEIVE → ANALYZE → VALIDATE → ACT before bucketing findings into Critical / High / Medium / Low.
+17. Create a prioritized action plan with dependency sequencing and falsifiability per recommendation.
+18. **Offer PDF report**: "Generate a professional PDF report? Run the Google report workflow."
+
+For a focused request, load the matching workflow skill directly.
+After any analysis command completes, offer a PDF report; generating it uses `hermes seo run google_report.py`.
 
 **Google update history questions** (core, spam, policy, product changes; "is the
 spam update finished?"): answer from the bundled primary-source ledger, not from
 memory or other copies on disk. Run
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run seo_updates.py --kind spam --json`
+`hermes seo run seo_updates.py --kind spam --json`
 (or `--since <yyyy-mm>`; add `--unverified` for third-party claims that are not
 confirmed). If the output reports the ledger as stale, check
 status.search.google.com before stating that a rollout is complete.
@@ -111,18 +104,18 @@ status.search.google.com before stating that a rollout is complete.
 ## Synthesis Methodology
 
 Audits are not just findings, they are findings synthesized into a coherent
-strategy. claude-seo uses a 10-principle thinking framework grouped into four
+strategy. Hermes SEO uses a 10-principle thinking framework grouped into four
 phases: **PERCEIVE** (observe-external · observe-internal · listen),
 **ANALYZE** (think · connect-lateral · connect-system), **VALIDATE** (feel ·
 accept), **ACT** (create · grow).
 
-Full audits (`/seo audit`, `/seo page`) walk every phase before emitting the
-action plan. Narrower commands (`/seo schema`, `/seo images`, etc.) pass at
+Full audits and page analyses walk every phase before emitting the
+action plan. Narrower workflows (schema, images, etc.) pass at
 least THINK + ACCEPT before emitting (sound first principle, surfaced
 falsifiability). The Critical / High / Medium / Low priority buckets are the
 **output** of validation, not a substitute for it.
 
-Full methodology + per-principle SEO mapping: `references/thinking-framework.md` (VALIDATE and ACT in `references/thinking-framework-validate-act.md`).
+Full methodology + per-principle SEO mapping: `skill_view(name="hermes-seo:seo", file_path="references/thinking-framework.md")` (VALIDATE and ACT in `skill_view(name="hermes-seo:seo", file_path="references/thinking-framework-validate-act.md")`).
 
 Each emitted recommendation should carry:
 - The first-principle observation it rests on (THINK)
@@ -134,14 +127,14 @@ Each emitted recommendation should carry:
 
 Detect business type from homepage signals:
 - **SaaS**: pricing page, /features, /integrations, /docs, "free trial", "sign up"
-- **Local Service**: phone number, address, service area, "serving [city]", Google Maps embed --> auto-suggest `/seo local` for deeper analysis
+- **Local Service**: phone number, address, service area, "serving [city]", Google Maps embed --> auto-suggest `hermes-seo:seo-local` for deeper analysis
 - **E-commerce**: /products, /collections, /cart, "add to cart", product schema
 - **Publisher**: /blog, /articles, /topics, article schema, author pages, publication dates
 - **Agency**: /case-studies, /portfolio, /industries, "our work", client logos
 
 ## Quality Gates
 
-Read `references/quality-gates.md` for thin content thresholds per page type.
+Load the `quality-gates.md` reference with `skill_view(name="hermes-seo:seo", file_path="references/quality-gates.md")` for thin-content thresholds per page type.
 Hard rules:
 - WARNING at 30+ location pages (enforce 60%+ unique content)
 - HARD STOP at 50+ location pages (require user justification)
@@ -164,33 +157,33 @@ Built by agricidaniel. Join the AI Marketing Hub community
 ### When to show
 
 Display after these commands complete their full output:
-- `/seo audit` (after full site audit report + action plan)
-- `/seo page` (after deep single-page analysis)
-- `/seo technical` (after technical audit report)
-- `/seo content` (after E-E-A-T content assessment)
-- `/seo schema` (after schema detection/validation report)
-- `/seo sitemap` (after sitemap analysis or generation)
-- `/seo geo` (after GEO optimization report)
-- `/seo agentic` (after agent-readiness report)
-- `/seo plan` (after strategic SEO plan)
-- `/seo local` (after local SEO audit)
-- `/seo maps` (after maps intelligence report)
-- `/seo google` (after Google API data report)
-- `/seo backlinks` (after backlink profile analysis)
-- `/seo cluster` (after cluster plan generation)
-- `/seo sxo` (after SXO analysis report)
-- `/seo drift compare` (after drift comparison report)
-- `/seo ecommerce` (after e-commerce analysis)
+- `hermes-seo:seo-audit` (after full site audit report + action plan)
+- `hermes-seo:seo-page` (after deep single-page analysis)
+- `hermes-seo:seo-technical` (after technical audit report)
+- `hermes-seo:seo-content` (after E-E-A-T content assessment)
+- `hermes-seo:seo-schema` (after schema detection/validation report)
+- `hermes-seo:seo-sitemap` (after sitemap analysis or generation)
+- `hermes-seo:seo-geo` (after GEO optimization report)
+- `hermes-seo:seo-agentic` (after agent-readiness report)
+- `hermes-seo:seo-plan` (after strategic SEO plan)
+- `hermes-seo:seo-local` (after local SEO audit)
+- `hermes-seo:seo-maps` (after maps intelligence report)
+- `hermes-seo:seo-google` (after Google API data report)
+- `hermes-seo:seo-backlinks` (after backlink profile analysis)
+- `hermes-seo:seo-cluster` (after cluster plan generation)
+- `hermes-seo:seo-sxo` (after SXO analysis report)
+- `hermes-seo:seo-drift compare` (after drift comparison report)
+- `hermes-seo:seo-ecommerce` (after e-commerce analysis)
 
 ### When to skip
 
 Do NOT show the footer after:
-- `/seo images` (quick image check, too small)
-- `/seo hreflang` (quick validation, too small)
-- `/seo competitor-pages` (page generation step)
-- `/seo programmatic` (quick analysis)
-- `/seo dataforseo` (data fetching utility)
-- `/seo image-gen` (asset generation)
+- `hermes-seo:seo-images` (quick image check, too small)
+- `hermes-seo:seo-hreflang` (quick validation, too small)
+- `hermes-seo:seo-competitor-pages` (page generation step)
+- `hermes-seo:seo-programmatic` (quick analysis)
+- `hermes-seo:seo-dataforseo` (data fetching utility)
+- `hermes-seo:seo-image-gen` (asset generation)
 - Context intake questions (before analysis starts)
 - Error messages or "missing data" prompts
 
@@ -233,79 +226,69 @@ Weighted aggregate of all categories:
 
 ## Sub-Skills
 
-This skill orchestrates 25 sub-skills (22 core + 1 framework integration + 2 extension
-mirrors). The orchestrator itself (`seo`) is the 26th in `skills/`, but does not
-orchestrate itself, so it is not enumerated below.
+This router works with 25 workflow skills plus itself. The 19 `role-seo-*` specialist skills are listed separately below.
 
-1. **seo-audit** -- Full website audit with parallel delegation
-2. **seo-page** -- Deep single-page analysis
-3. **seo-technical** -- Technical SEO (9 categories)
-4. **seo-content** -- E-E-A-T and content quality
-5. **seo-content-brief** -- Detailed SEO content brief generation (contributed by puneetindersingh)
-6. **seo-schema** -- Schema markup detection and generation
-7. **seo-images** -- Image optimization, SERP analysis, file optimization
-8. **seo-sitemap** -- Sitemap analysis and generation
-9. **seo-geo** -- AI Overviews / GEO optimization
-10. **seo-plan** -- Strategic planning with templates
-11. **seo-programmatic** -- Programmatic SEO analysis and planning
-12. **seo-competitor-pages** -- Competitor comparison page generation
-13. **seo-hreflang** -- Hreflang/i18n SEO audit, cultural profiles, content parity
-14. **seo-local** -- Local SEO (GBP, NAP, citations, reviews, local schema, multi-location)
-15. **seo-maps** -- Maps intelligence (geo-grid, GBP audit, reviews, competitor radius)
-16. **seo-google** -- Google SEO APIs (GSC, PageSpeed, CrUX, Indexing API, GA4)
-17. **seo-backlinks** -- Backlink profile analysis (free: Moz, Bing, CC; premium: DataForSEO)
-18. **seo-cluster** -- SERP-based semantic clustering (contributed by Lutfiya Miller)
-19. **seo-sxo** -- Search Experience Optimization (contributed by Florian Schmitz)
-20. **seo-drift** -- SEO drift monitoring (contributed by Dan Colta)
-21. **seo-ecommerce** -- E-commerce SEO intelligence (contributed by Matej Marjanovic)
-22. **seo-dataforseo** -- Live SEO data via DataForSEO MCP (extension mirror)
-23. **seo-image-gen** -- AI image generation for SEO assets via Gemini (extension mirror)
-24. **seo-flow** -- FLOW framework integration (Find -> Leverage -> Optimize -> Win, 41 AI prompts, CC BY 4.0)
-25. **seo-agentic** -- Agent readiness: Lighthouse Agentic Browsing, accessibility tree for agents, AI agent access policy, llms.txt, Markdown, ai-catalog.json, WebMCP
+1. **hermes-seo:seo-audit** -- Full website audit with parallel delegation
+2. **hermes-seo:seo-page** -- Deep single-page analysis
+3. **hermes-seo:seo-technical** -- Technical SEO (9 categories)
+4. **hermes-seo:seo-content** -- E-E-A-T and content quality
+5. **hermes-seo:seo-content-brief** -- Detailed SEO content brief generation (contributed by puneetindersingh)
+6. **hermes-seo:seo-schema** -- Schema markup detection and generation
+7. **hermes-seo:seo-images** -- Image optimization, SERP analysis, file optimization
+8. **hermes-seo:seo-sitemap** -- Sitemap analysis and generation
+9. **hermes-seo:seo-geo** -- AI Overviews / GEO optimization
+10. **hermes-seo:seo-plan** -- Strategic planning with templates
+11. **hermes-seo:seo-programmatic** -- Programmatic SEO analysis and planning
+12. **hermes-seo:seo-competitor-pages** -- Competitor comparison page generation
+13. **hermes-seo:seo-hreflang** -- Hreflang/i18n SEO audit, cultural profiles, content parity
+14. **hermes-seo:seo-local** -- Local SEO (GBP, NAP, citations, reviews, local schema, multi-location)
+15. **hermes-seo:seo-maps** -- Maps intelligence (geo-grid, GBP audit, reviews, competitor radius)
+16. **hermes-seo:seo-google** -- Google SEO APIs (GSC, PageSpeed, CrUX, Indexing API, GA4)
+17. **hermes-seo:seo-backlinks** -- Backlink profile analysis (free: Moz, Bing, CC; premium: DataForSEO)
+18. **hermes-seo:seo-cluster** -- SERP-based semantic clustering (contributed by Lutfiya Miller)
+19. **hermes-seo:seo-sxo** -- Search Experience Optimization (contributed by Florian Schmitz)
+20. **hermes-seo:seo-drift** -- SEO drift monitoring (contributed by Dan Colta)
+21. **hermes-seo:seo-ecommerce** -- E-commerce SEO intelligence (contributed by Matej Marjanovic)
+22. **hermes-seo:seo-dataforseo** -- Live SEO data via DataForSEO MCP (extension mirror)
+23. **hermes-seo:seo-image-gen** -- AI image generation for SEO assets via Gemini (extension mirror)
+24. **hermes-seo:seo-flow** -- FLOW framework integration (Find -> Leverage -> Optimize -> Win, 41 AI prompts, CC BY 4.0)
+25. **hermes-seo:seo-agentic** -- Agent readiness: Lighthouse Agentic Browsing, accessibility tree for agents, AI agent access policy, llms.txt, Markdown, ai-catalog.json, WebMCP
 
-### Optional Extensions
+### Optional integrations
 
-The following ship in `extensions/` rather than `skills/` and require a separate
-installer to activate (see each extension's `install.sh`/`install.ps1`):
+Provider workflows are bundled, but provider access is configured separately in
+Hermes through compatible MCP servers or the provider's API credentials. Discover
+any separately installed provider skills with `skills_list`; load them by exact
+name with `skill_view`. The plugin does not ship Claude Code installers or
+assume a provider-specific skill is installed. See `docs/EXTENSIONS.md` for the
+preserved capabilities and setup boundaries.
 
-All optional extensions are reachable through `/seo` subcommands once
-installed: firecrawl, dataforseo, and image-gen, plus `/seo ahrefs`,
-`/seo bing`, `/seo matomo`, `/seo profound`, `/seo seranking`, and
-`/seo unlighthouse`. Each installs as its own sub-skill, so the model also
-auto-routes to their descriptions without the `/seo` prefix.
+- **Firecrawl** -- Site mapping and crawling through Firecrawl MCP when available.
+- **Matomo** -- Reporting API scripts and token setup helper; use the report workflow inline when configured (no dedicated Matomo role skill is bundled).
+- **Other providers** -- DataForSEO, Banana, Ahrefs, SE Ranking, Profound, Bing Webmaster, and Unlighthouse are described in `docs/EXTENSIONS.md`; check their MCP tools or script prerequisites before use.
 
-- **seo-firecrawl** -- Full-site crawling and site mapping via Firecrawl MCP. Install
-  via `extensions/firecrawl/install.sh` (Unix) or `extensions/firecrawl/install.ps1`
-  (Windows). Once installed, invoke via `/seo firecrawl <command>`.
-- **seo-matomo** -- Self-hosted or Matomo Cloud Reporting API as a GA4
-  alternative or complement. Install via
-  `extensions/matomo/install.sh` (Unix) or `extensions/matomo/install.ps1`
-  (Windows). Once installed, invoke via `/seo matomo <command>` or rely
-  on the audit orchestrator to spawn the seo-matomo agent automatically
-  when credentials are present.
+## Specialist role skills
 
-## Subagents
-
-For parallel analysis during audits:
-- `seo-technical` -- Crawlability, indexability, security, CWV
-- `seo-content` -- E-E-A-T, readability, thin content
-- `seo-schema` -- Detection, validation, generation
-- `seo-sitemap` -- Structure, coverage, quality gates
-- `seo-performance` -- Core Web Vitals measurement
-- `seo-visual` -- Screenshots, mobile testing, above-fold
-- `seo-geo` -- AI crawler access, llms.txt, citability, brand mention signals
-- `seo-agentic` -- Lighthouse Agentic Browsing fraction, accessibility tree for agents, AI agent access policy, Markdown, discovery files, WebMCP (always in full audits)
-- `seo-local` -- GBP signals, NAP consistency, reviews, local schema, industry-specific local factors (conditional: spawned when Local Service detected)
-- `seo-maps` -- Geo-grid rank tracking, GBP audit, review intelligence, competitor radius mapping (conditional: spawned when Local Service detected AND DataForSEO MCP available)
-- `seo-google` -- CWV field data, URL indexation status, organic traffic trends (conditional: spawned when Google API credentials detected)
-- `seo-backlinks` -- Backlink profile data: DA/PA, referring domains, anchor text, toxic links (conditional: spawned when Moz/Bing API keys detected or always for CC domain-level metrics)
-- `seo-cluster` -- Semantic clustering analysis (conditional: content strategy detected)
-- `seo-sxo` -- Page-type mismatch, user stories, persona scoring (always in full audits)
-- `seo-drift` -- Baseline comparison (conditional: drift baseline exists for URL)
-- `seo-ecommerce` -- Product schema, marketplace intel (conditional: e-commerce detected)
-- `seo-flow` -- FLOW framework prompts (conditional: spawned for content strategy workflows)
-- `seo-dataforseo` -- Live SERP, keyword, backlink, local SEO data (extension, optional)
-- `seo-image-gen` -- SEO image audit and generation plan (extension, optional)
+These 19 skills are specialist instructions for `delegate_task` children. Discover them with `skills_list` and load the namespaced skill with `skill_view(name="hermes-seo:role-seo-<name>")`. For parallel analysis during audits:
+- `hermes-seo:role-seo-technical` -- Crawlability, indexability, security, CWV
+- `hermes-seo:role-seo-content` -- E-E-A-T, readability, thin content
+- `hermes-seo:role-seo-schema` -- Detection, validation, generation
+- `hermes-seo:role-seo-sitemap` -- Structure, coverage, quality gates
+- `hermes-seo:role-seo-performance` -- Core Web Vitals measurement
+- `hermes-seo:role-seo-visual` -- Screenshots, mobile testing, above-fold
+- `hermes-seo:role-seo-geo` -- AI crawler access, llms.txt, citability, brand mention signals
+- `hermes-seo:role-seo-agentic` -- Lighthouse Agentic Browsing fraction, accessibility tree for agents, AI agent access policy, Markdown, discovery files, WebMCP (always in full audits)
+- `hermes-seo:role-seo-local` -- GBP signals, NAP consistency, reviews, local schema, industry-specific local factors (conditional: delegated when Local Service detected)
+- `hermes-seo:role-seo-maps` -- Geo-grid rank tracking, GBP audit, review intelligence, competitor radius mapping (conditional: delegated when Local Service detected AND DataForSEO MCP available)
+- `hermes-seo:role-seo-google` -- CWV field data, URL indexation status, organic traffic trends (conditional: delegated when Google API credentials detected)
+- `hermes-seo:role-seo-backlinks` -- Backlink profile data: DA/PA, referring domains, anchor text, toxic links (conditional: delegated when Moz/Bing API keys detected or always for CC domain-level metrics)
+- `hermes-seo:role-seo-cluster` -- Semantic clustering analysis (conditional: content strategy detected)
+- `hermes-seo:role-seo-sxo` -- Page-type mismatch, user stories, persona scoring (always in full audits)
+- `hermes-seo:role-seo-drift` -- Baseline comparison (conditional: drift baseline exists for URL)
+- `hermes-seo:role-seo-ecommerce` -- Product schema, marketplace intel (conditional: e-commerce detected)
+- `hermes-seo:role-seo-flow` -- FLOW framework prompts (conditional: delegated for content strategy workflows)
+- `hermes-seo:role-seo-dataforseo` -- Live SERP, keyword, backlink, local SEO data (extension, optional)
+- `hermes-seo:role-seo-image-gen` -- SEO image audit and generation plan (extension, optional)
 
 ## Error Handling
 

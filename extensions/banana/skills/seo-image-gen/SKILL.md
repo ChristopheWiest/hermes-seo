@@ -20,34 +20,31 @@ aspect ratios, and resolution defaults.
 ## Architecture Note
 
 This extension is built on [Claude Banana](https://github.com/AgriciDaniel/banana-claude),
-the standalone AI image generation skill for Claude Code.
+a standalone AI image generation skill; this file is an optional Hermes provider reference.
 
-This skill has two components with distinct roles:
-- **SKILL.md** (this file): Handles interactive `/seo image-gen` commands for generating images
-- **Agent** (`agents/seo-image-gen.md`): Audit-only analyst spawned during `/seo audit` to assess existing OG/social images and produce a generation plan (never auto-generates)
+This optional companion reference is not itself a registered Hermes skill. The registered core `hermes-seo:seo-image-gen` workflow and role `hermes-seo:role-seo-image-gen` provide the invocable entry points:
+- This file: optional Gemini provider guidance for the registered core image-generation workflow.
+- `hermes-seo:role-seo-image-gen`: audit-only analyst used with `hermes-seo:seo-audit` to assess existing OG/social images and produce a generation plan (never auto-generates).
 
 ## Prerequisites
 
-This skill requires the banana extension to be installed:
-```bash
-./extensions/banana/install.sh
-```
+This reference is bundled with Hermes SEO. Configure a compatible Gemini image MCP server in Hermes to enable generation. Store `GOOGLE_AI_API_KEY` as a secret in the active Hermes profile; the parent native tool injects it only for Banana provider scripts. Never place the key in command arguments.
 
 **Check availability:** Before using any image generation tool, verify the MCP server
 is connected by checking if `gemini_generate_image` or `set_aspect_ratio` tools are
-available. If tools are not available, inform the user the extension is not installed
-and provide install instructions.
+available. If tools are not available, inform the user the provider MCP is not configured in Hermes
+and explain Hermes provider setup.
 
 ## Quick Reference
 
 | Command | What it does |
 |---------|-------------|
-| `/seo image-gen og <description>` | Generate OG/social preview image (1200x630 feel) |
-| `/seo image-gen hero <description>` | Blog hero image (widescreen, dramatic) |
-| `/seo image-gen product <description>` | Product photography (clean, white BG) |
-| `/seo image-gen infographic <description>` | Infographic visual (vertical, data-heavy) |
-| `/seo image-gen custom <description>` | Custom image with full Creative Director pipeline |
-| `/seo image-gen batch <description> [N]` | Generate N variations (default: 3) |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate og <description>` | Generate OG/social preview image (1200x630 feel) |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate hero <description>` | Blog hero image (widescreen, dramatic) |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate product <description>` | Product photography (clean, white BG) |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate infographic <description>` | Infographic visual (vertical, data-heavy) |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate custom <description>` | Custom image with full Creative Director pipeline |
+| Use the registered `hermes-seo:seo-image-gen` workflow to generate batch <description> [N]` | Generate N variations (default: 3) |
 
 ## SEO Image Use Cases
 
@@ -72,8 +69,7 @@ For every generation request:
 2. **Apply SEO defaults** from the use cases table above
 3. **Set aspect ratio** via `set_aspect_ratio` MCP tool
 4. **Construct Reasoning Brief** using the banana Creative Director pipeline:
-   - Use `${CLAUDE_SKILL_DIR}` as the installed skill root
-   - Load `${CLAUDE_SKILL_DIR}/references/prompt-engineering.md` for the 6-component system
+   - Load `references/prompt-engineering.md` with `hermes seo show extensions/banana/references/prompt-engineering.md` for the 6-component system
    - Apply domain mode emphasis (Subject 30%, Style 25%, Context 15%, etc.)
    - Be SPECIFIC and VISCERAL: describe what the camera sees
 5. **Generate** via `gemini_generate_image` MCP tool
@@ -83,10 +79,10 @@ For every generation request:
 
 If the user mentions a brand or has SEO presets configured:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana presets.py list
+hermes seo run --extension banana presets.py list
 ```
-Load matching preset and apply as defaults. Also check `${CLAUDE_SKILL_DIR}/references/seo-image-presets.md`
-for SEO-specific preset templates.
+Load matching preset and apply as defaults. For SEO-specific preset templates, read
+`extensions/banana/references/seo-image-presets.md` with `hermes seo show extensions/banana/references/seo-image-presets.md`.
 
 ## Post-Generation SEO Checklist
 
@@ -121,8 +117,8 @@ After every successful generation, guide the user on:
 
 Image generation costs money. Be transparent:
 - Show estimated cost before generating (especially for batch)
-- Log every generation: `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana cost_tracker.py log --model MODEL --resolution RES --prompt "brief"`
-- Run `cost_tracker.py summary` if user asks about usage
+- Log every generation: `hermes seo run --extension banana cost_tracker.py log --model MODEL --resolution RES --prompt "brief"`
+- Run `hermes seo run --extension banana cost_tracker.py summary` if user asks about usage
 
 Pricing is not hard-coded. Check current Google pricing at
 https://ai.google.dev/gemini-api/docs/pricing, store dated values in
@@ -141,32 +137,28 @@ https://ai.google.dev/gemini-api/docs/pricing, store dated values in
 
 | Error | Resolution |
 |-------|-----------|
-| MCP not configured | Run `./extensions/banana/install.sh` or `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana setup_mcp.py --key YOUR_KEY` |
+| MCP not configured | Configure the Gemini image provider in Hermes and grant its MCP tool access; do not write credentials into repository files. |
 | API key invalid | New key at https://aistudio.google.com/apikey |
 | Rate limited (429) | Wait 60s, retry. Check current free-tier limits before batch operations |
 | `IMAGE_SAFETY` | Rephrase prompt - see `references/prompt-adaptation-safety.md` |
-| MCP unavailable | Fall back: `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana generate.py --prompt "..." --aspect-ratio "16:9" --model "$NANOBANANA_MODEL"` |
-| CSV batch input | Plan first: `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana batch.py --csv requests.csv --model "$NANOBANANA_MODEL"` |
-| Extension not installed | Show install instructions: `./extensions/banana/install.sh` |
+| MCP unavailable | Call the native `hermes_seo_run` tool for Banana `generate.py` with prompt, aspect-ratio, and model arguments after the provider is configured. |
+| CSV batch input | Plan first: `hermes seo run --extension banana batch.py --csv requests.csv --model "$NANOBANANA_MODEL"` |
+| Extension not installed | Use the bundled extension files from the Hermes SEO plugin; provider setup remains separate. |
 
 ## Cross-Skill Integration
 
-- **seo-images** (analysis) feeds into **seo-image-gen** (generation): audit results from `/seo images` identify missing or low-quality images; use those findings to drive `/seo image-gen` commands
+- **seo-images** (analysis) feeds into **seo-image-gen** (generation): audit results from `hermes-seo:seo-images` identify missing or low-quality images; use those findings to drive `hermes-seo:seo-image-gen` commands
 - **seo-audit** spawns the seo-image-gen **agent** (not this skill) to analyze OG/social images across the site and produce a prioritized generation plan
 - **seo-schema** can consume generated images: after generation, suggest `ImageObject` schema markup pointing to the new assets
 
 ## Reference Documentation
 
-Load on-demand. Do NOT load all at startup:
-- `${CLAUDE_SKILL_DIR}/references/prompt-engineering.md`: 6-component system, domain modes, advanced techniques
-- `${CLAUDE_SKILL_DIR}/references/prompt-templates.md`: ready-to-use templates by use case
-- `${CLAUDE_SKILL_DIR}/references/prompt-adaptation-safety.md`: model adaptation rules, common mistakes, safety-filter rephrasing
-- `${CLAUDE_SKILL_DIR}/references/gemini-models.md`:Model specs, rate limits, capabilities
-- `${CLAUDE_SKILL_DIR}/references/mcp-tools.md`:MCP tool parameters and responses
-- `${CLAUDE_SKILL_DIR}/references/post-processing.md`:ImageMagick/FFmpeg pipeline recipes
-- `${CLAUDE_SKILL_DIR}/references/cost-tracking.md`:Pricing, usage tracking
-- `${CLAUDE_SKILL_DIR}/references/presets.md`:Brand preset management
-- `${CLAUDE_SKILL_DIR}/references/seo-image-presets.md`:SEO-specific preset templates
+These companion files are optional reference material, not separately registered Hermes skills. Load on demand:
+These reference files live under `extensions/banana/references/`; load them with
+`hermes seo show extensions/banana/references/<filename>.md` when needed:
+`prompt-engineering.md`, `prompt-templates.md`, `prompt-adaptation-safety.md`,
+`gemini-models.md`, `mcp-tools.md`, `post-processing.md`, `cost-tracking.md`,
+`presets.md`, and `seo-image-presets.md`.
 
 ## Response Format
 

@@ -302,17 +302,16 @@ def main():
         default="relevance",
         help="Sort order for search (default: relevance)",
     )
-    parser.add_argument("--api-key", help="API key override")
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
 
     if args.command == "search":
-        result = search_videos(args.query, max_results=args.limit, order=args.order, api_key=args.api_key)
+        result = search_videos(args.query, max_results=args.limit, order=args.order)
     elif args.command == "video":
-        result = get_video_details(args.query, api_key=args.api_key)
+        result = get_video_details(args.query)
     elif args.command == "channel":
-        result = get_channel_info(args.query, api_key=args.api_key)
+        result = get_channel_info(args.query)
 
     if result.get("error"):
         print(f"Error: {result['error']}", file=sys.stderr)

@@ -1,18 +1,8 @@
 ---
 name: seo-agentic
-description: >
-  Audit and fix agent readiness: the Lighthouse Agentic Browsing fraction,
-  accessibility tree for agents, robots.txt and Content-Signal for AI agents,
-  WAF treatment of agent traffic, llms.txt, Markdown delivery, ai-catalog.json,
-  /.well-known discovery files, and WebMCP tools. Exclude AI citability and
-  brand signals (seo-geo) and commerce protocol depth (seo-ecommerce).
-user-invocable: true
-argument-hint: "[audit|fix|lighthouse|refresh] [url]"
+description: "Assess website readiness for AI agents and crawlers."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Agentic Browsing Readiness
@@ -31,29 +21,29 @@ only ChatGPT desktop calls tools by default).
 
 | Command | What it does |
 |---|---|
-| `/seo agentic <url>` | Full agent-readiness audit (default mode) |
-| `/seo agentic lighthouse <url or file.json>` | Explain the Lighthouse Agentic Browsing X/N result |
-| `/seo agentic fix <url>` | Draft fixes: robots.txt Content-Signal, llms.txt, ai-catalog.json, WebMCP |
-| `/seo agentic refresh` | Re-verify the dated facts in `references/vendor-matrix.md` |
+| `hermes-seo:seo-agentic <url>` | Full agent-readiness audit (default mode) |
+| `hermes-seo:seo-agentic lighthouse <url or file.json>` | Explain the Lighthouse Agentic Browsing X/N result |
+| `hermes-seo:seo-agentic fix <url>` | Draft fixes: robots.txt Content-Signal, llms.txt, ai-catalog.json, WebMCP |
+| `hermes-seo:seo-agentic refresh` | Re-verify the dated facts in `references/vendor-matrix.md` |
 
 ## Audit process
 
 Run the steps in this order and keep every tool's JSON for the report.
 
 1. **Lighthouse fraction.**
-   `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run lighthouse_agentic.py <url> --strategy both --json`.
+   `hermes_seo_run {"script":"lighthouse_agentic.py","args":["<url>","--strategy","both","--json"]}`.
    Uses PSI v5 (`category=AGENTIC_BROWSING`); a Google API key avoids the
    shared anonymous quota. With a saved report use `--from-json <file>`.
    Report the fraction as `X/N` exactly as computed. Never convert it to a
    percentage and never assume N: it is at most 6, and N/A and informative
-   audits drop out. Read `references/lighthouse-agentic-category.md` before explaining it.
+   audits drop out. Load with `skill_view(name="hermes-seo:seo-agentic", file_path="references/lighthouse-agentic-category.md")` before explaining it.
 2. **HTTP and markup checks.**
-   `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_check.py <url> --json`.
+   `hermes seo run agentic_check.py <url> --json`.
    Covers server-rendered content, robots.txt groups per AI agent and
    Content-Signal, llms.txt, Markdown delivery, ai-catalog.json, `/.well-known`
    documents, and WebMCP markup.
 3. **Accessibility tree.**
-   `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agent_ux_check.py <url> --json`.
+   `hermes seo run agent_ux_check.py <url> --json`.
    A local 0-100 heuristic; present it separately from the Lighthouse fraction.
    Page-level criteria: `references/agent-friendly-pages.md`.
 4. **WAF behaviour (only with authorization).** Add `--ua-matrix` to step 2
@@ -117,10 +107,10 @@ are listed as options either way.
 Drafts go to stdout for review; nothing is deployed and no file is overwritten.
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_fix.py robots <url> --signal "search=yes, ai-input=yes, ai-train=no"
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_fix.py llms <url>
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_fix.py ai-catalog --publisher example.com --entry "Name|media type|url"
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_fix.py webmcp <url> --json
+hermes seo run agentic_fix.py robots <url> --signal "search=yes, ai-input=yes, ai-train=no"
+hermes seo run agentic_fix.py llms <url>
+hermes seo run agentic_fix.py ai-catalog --publisher example.com --entry "Name|media type|url"
+hermes seo run agentic_fix.py webmcp <url> --json
 ```
 
 - `robots` adds Content-Signal to each group and never changes Allow or
@@ -128,7 +118,7 @@ Drafts go to stdout for review; nothing is deployed and no file is overwritten.
   `ai-train=yes` or `no`; do not decide it for them.
 - `webmcp` drafts one tool per real form, submitting through the form so the
   UI's own handler runs. Mark sends, purchases and deletes consequential and
-  keep a human confirmation step. Read `references/webmcp.md` first.
+  keep a human confirmation step. Load with `skill_view(name="hermes-seo:seo-agentic", file_path="references/webmcp.md")` first.
 - Markdown negotiation for nginx, with a tested config, is in
   `references/discovery-and-markdown.md`.
 
@@ -143,7 +133,7 @@ Drafts go to stdout for review; nothing is deployed and no file is overwritten.
 - State the Lighthouse version and test date with every fraction; WebMCP
   audits depend on the testing browser.
 - For any vendor fact, use `references/vendor-matrix.md` and keep its source
-  grade. If a row is older than 60 days, say so or run `/seo agentic refresh`.
+  grade. If a row is older than 60 days, say so or run `hermes-seo:seo-agentic refresh`.
 
 ## Refresh mode
 
@@ -181,8 +171,8 @@ version changes, and the `CHECKED_ON` constant in `agentic_check.py` together.
 
 | Scenario | Action |
 |---|---|
-| PSI quota exceeded or no key | Say so, suggest configuring a Google API key (`/seo google setup`), and continue with steps 2 and 3. Offer a local run: `npx lighthouse@latest <url> --only-categories=agentic-browsing --output=json`, then `--from-json`. |
-| Agent-UX `score_status: unavailable` (no Chromium) | Report the heuristic as unavailable and rely on Lighthouse `agent-accessibility-tree` for the tree. Use `html_findings` (when `html_only_fallback` is true) only if `server-rendered` passed; on a client-rendered page they describe the empty app shell. Suggest `/seo setup` for Chromium. |
+| PSI quota exceeded or no key | Say so, suggest configuring a Google API key (`hermes-seo:seo-google setup`), and continue with steps 2 and 3. Offer a local run: `npx lighthouse@latest <url> --only-categories=agentic-browsing --output=json`, then `--from-json`. |
+| Agent-UX `score_status: unavailable` (no Chromium) | Report the heuristic as unavailable and rely on Lighthouse `agent-accessibility-tree` for the tree. Use `html_findings` (when `html_only_fallback` is true) only if `server-rendered` passed; on a client-rendered page they describe the empty app shell. Suggest `hermes-seo:seo` for Chromium. |
 | Static WebMCP count differs from Lighthouse | `registerTool_call_sites` counts call sites, not tools. Report the Lighthouse `webmcp-registered-tools` list as the tool count. |
 | No agentic-browsing category in a saved report | The report predates Lighthouse 13.2; rerun with a current version. |
 | WebMCP audits N/A | The testing browser lacked WebMCP support, or the page registers nothing. Not a defect. |

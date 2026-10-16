@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = [*ROOT.glob("skills/**/*.md"), *ROOT.glob("agents/*.md"),
-         *ROOT.glob("extensions/*/skills/**/*.md"), *ROOT.glob("extensions/*/agents/*.md"),
+FILES = [*ROOT.glob("skills/**/*.md"),
+         *ROOT.glob("extensions/*/skills/**/*.md"),
          *ROOT.glob("scripts/*.py")]
 
 WRONG = [

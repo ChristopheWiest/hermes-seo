@@ -6,7 +6,10 @@ Uses only Python stdlib (no pip dependencies).
 
 Usage:
     generate.py --prompt "a cat in space" [--aspect-ratio 16:9] [--resolution 1K]
-                [--model MODEL] [--api-key KEY] [--thinking LEVEL] [--image-only]
+                [--model MODEL] [--thinking LEVEL] [--image-only]
+
+The Google API key must be injected as ``GOOGLE_AI_API_KEY`` by the
+Hermes profile-scoped secret bridge. It is never accepted on the command line.
 """
 
 import argparse
@@ -139,7 +142,6 @@ def main():
     parser.add_argument("--aspect-ratio", default=DEFAULT_RATIO, help=f"Aspect ratio (default: {DEFAULT_RATIO})")
     parser.add_argument("--resolution", default=DEFAULT_RESOLUTION, help=f"Resolution: 512, 1K, 2K, 4K (default: {DEFAULT_RESOLUTION})")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Model ID (or set NANOBANANA_MODEL env)")
-    parser.add_argument("--api-key", default=None, help="Google AI API key (or set GOOGLE_AI_API_KEY env)")
     parser.add_argument("--thinking", default=None, choices=["minimal", "low", "medium", "high"], help="Thinking level")
     parser.add_argument("--image-only", action="store_true", help="Return image only (no text)")
 
@@ -157,9 +159,9 @@ def main():
         print(json.dumps({"error": True, "message": "No model. Set NANOBANANA_MODEL or pass --model."}))
         sys.exit(1)
 
-    api_key = args.api_key or os.environ.get("GOOGLE_AI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    api_key = os.environ.get("GOOGLE_AI_API_KEY")
     if not api_key:
-        print(json.dumps({"error": True, "message": "No API key. Set GOOGLE_AI_API_KEY env or pass --api-key"}))
+        print(json.dumps({"error": True, "message": "No API key. Configure GOOGLE_AI_API_KEY in the active Hermes profile."}))
         sys.exit(1)
 
     result = generate_image(

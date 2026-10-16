@@ -1,4 +1,6 @@
-# Claude SEO v2.2.5 final verification
+# Upstream historical record: Claude SEO v2.2.5 final verification
+
+> **Provenance:** This document records claims about the upstream Claude SEO v2.2.5 release and its repositories as reported on the date below. It is not verification of this Hermes fork, its runtime, or any current upstream state. Installer, CI, deployment, and repository details are historical.
 
 Date: 2026-08-26
 

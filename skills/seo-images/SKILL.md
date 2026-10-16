@@ -1,19 +1,8 @@
 ---
 name: seo-images
-description: >
-  Image optimization analysis for SEO and performance. Checks alt text, file
-  sizes, formats, responsive images, lazy loading, CLS prevention, image SERP
-  rankings (via DataForSEO), and image file optimization (WebP/AVIF conversion,
-  IPTC/XMP metadata injection). Use when user says "image optimization",
-  "alt text", "image SEO", "image size", "image audit", "optimize images",
-  "image metadata", "image SERP", "convert to webp", or "image file optimize".
-user-invocable: true
-argument-hint: "[url]"
+description: "Audit image search, accessibility, and performance."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Image Optimization Analysis
@@ -106,7 +95,7 @@ Third-party reporting and Wikipedia describe a Rust-based JPEG XL decoder as shi
 
 #### Detected lazy-loader methods (`lazy_method` field)
 
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run parse_html.py` classifies each image's lazy-loading mechanism via the
+`hermes seo run parse_html.py` classifies each image's lazy-loading mechanism via the
 `lazy_method` field on every image entry. Five values:
 
 | `lazy_method` | Signal detected | Common stack |
@@ -199,7 +188,7 @@ Sorted by file size impact (largest savings first):
 
 When DataForSEO MCP is available, enhance the image audit with competitive data.
 
-### `/seo images serp <keyword>`
+### `hermes-seo:seo-images serp <keyword>`
 
 Cross-reference on-page images with the image results visible in the Google SERP.
 
@@ -230,14 +219,14 @@ If DataForSEO MCP is not available, inform user and suggest installing the exten
 
 Optimize image files for SEO: format conversion, metadata injection, compression.
 
-### `/seo images optimize <path>`
+### `hermes-seo:seo-images optimize <path>`
 
 Optimize image file(s) for web and SEO. Converts to WebP/AVIF, injects IPTC
 metadata, compresses, and generates responsive variants.
 
 **Tools used (in order of preference):**
-- `exiftool` -- EXIF/IPTC/XMP read/write (install: `sudo apt install libimage-exiftool-perl`)
-- `cwebp` -- WebP conversion (install: `sudo apt install webp`)
+- `exiftool` -- EXIF/IPTC/XMP read/write (optional OS package `libimage-exiftool-perl`)
+- `cwebp` -- WebP conversion (optional OS package `webp`)
 - ImageMagick `convert` -- Format conversion, resizing (pre-installed on most systems)
 - FFmpeg -- Fallback for format conversion (pre-installed)
 
@@ -270,7 +259,7 @@ This is **NOT a ranking factor** but can improve Google Images display and brand
 
 **With exiftool (preferred):**
 ```bash
-# Read all metadata
+# read_file all metadata
 exiftool image.jpg
 
 # Inject IPTC + XMP metadata for Google Images rich results
@@ -323,13 +312,13 @@ https://support.google.com/merchants/answer/14743464
 
 ```bash
 # Audit a directory for the IPTC label (counts: missing, ai, captured, etc.)
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run iptc_ai_label.py audit ./images/ --json
+hermes seo run iptc_ai_label.py audit ./images/ --json
 
 # Audit a single image
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run iptc_ai_label.py audit ./hero.webp --json
+hermes seo run iptc_ai_label.py audit ./hero.webp --json
 
 # Inject the AI label into an image
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run iptc_ai_label.py inject ./ai-hero.webp \
+hermes seo run iptc_ai_label.py inject ./ai-hero.webp \
     --source-type trainedAlgorithmicMedia
 
 # Other vocabulary values:
@@ -381,7 +370,7 @@ Google extracts these IPTC `DigitalSourceType` values:
 > text alone. No new published image-SEO lever yet; keep descriptive alt text +
 > clean structured data.
 
-When `/seo images optimize` is run on AI-generated assets, prompt the user to
+When `hermes-seo:seo-images optimize` is run on AI-generated assets, prompt the user to
 confirm the source type and inject the matching IPTC value automatically.
 
 For **AI-generated product titles and descriptions**, Google Merchant Center
@@ -431,6 +420,6 @@ For maximum image SEO, run this pipeline on each image:
 | URL unreachable | Report connection error with status code. Suggest verifying URL and checking if site requires authentication. |
 | No images found on page | Report that no `<img>` elements were detected. Suggest checking if images are loaded via JavaScript or CSS background-image. |
 | Images behind CDN or authentication | Note that image files could not be directly accessed for size analysis. Report available metadata (alt text, dimensions, format from markup) and flag inaccessible resources. |
-| exiftool not installed | Fall back to ImageMagick for metadata. Recommend: `sudo apt install libimage-exiftool-perl` |
-| cwebp not installed | Fall back to ImageMagick or FFmpeg for WebP conversion. Recommend: `sudo apt install webp` |
+| exiftool not installed | Fall back to ImageMagick for metadata. If needed, install the `libimage-exiftool-perl` OS package using the system package manager. |
+| cwebp not installed | Fall back to ImageMagick or FFmpeg for WebP conversion. If needed, install the `webp` OS package using the system package manager. |
 | DataForSEO MCP not available | Skip Image SERP Analysis section. Note extension is not installed. |

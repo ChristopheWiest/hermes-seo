@@ -7,8 +7,8 @@ concurrent `log` calls both read the same ledger and the second overwrote the
 first. A budget ledger that quietly under-reports spend is the one thing it
 must not do.
 
-Every test runs against an isolated CLAUDE_SEO_CONFIG_DIR, never the real
-~/.config/claude-seo/ ledger.
+Every test runs against an isolated HERMES_SEO_CONFIG_DIR, never the real
+~/.config/hermes-seo/ ledger.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ _SCRIPT = _REPO / "scripts" / "dataforseo_costs.py"
 def _run(config_dir: Path, *argv: str) -> subprocess.CompletedProcess:
     """Invoke the CLI in a subprocess with an isolated ledger."""
     env = dict(os.environ)
-    env["CLAUDE_SEO_CONFIG_DIR"] = str(config_dir)
+    env["HERMES_SEO_CONFIG_DIR"] = str(config_dir)
     return subprocess.run(
         [sys.executable, str(_SCRIPT), *argv],
         capture_output=True,
@@ -176,7 +176,7 @@ def test_check_reports_whether_credentials_are_in_env(tmp_path, monkeypatch):
     from pathlib import Path
     script = Path(__file__).resolve().parents[1] / "scripts" / "dataforseo_costs.py"
     env = {k: v for k, v in os.environ.items() if not k.startswith("DATAFORSEO_")}
-    env["CLAUDE_SEO_CONFIG_DIR"] = str(tmp_path)
+    env["HERMES_SEO_CONFIG_DIR"] = str(tmp_path)
     run = lambda e: json.loads(subprocess.run(
         [sys.executable, str(script), "check", "serp_organic_live_advanced"],
         capture_output=True, text=True, env=e, check=True).stdout)

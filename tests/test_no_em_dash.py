@@ -1,6 +1,6 @@
 """House-style gate: no em dash (U+2014) in the shipped instruction/code surface.
 
-The 2026-09-28 house-style pass removed every em dash from skills/, agents/,
+The 2026-09-28 house-style pass removed every em dash from skills/,
 scripts/, schema/, data/, extensions/, docs/, README.md, CLAUDE.md and
 AGENTS.md, rewriting each into plain punctuation (comma, period, colon,
 parentheses or conjunction) so the codebase reads consistently. This test is
@@ -33,14 +33,13 @@ ESCAPED_FORMS = ("&mdash;", "&#8212;", "\\u2014")
 
 TARGET_PREFIXES = (
     "skills/",
-    "agents/",
     "scripts/",
     "schema/",
     "data/",
     "extensions/",
     "docs/",
 )
-TARGET_FILES = {"README.md", "CLAUDE.md", "AGENTS.md"}
+TARGET_FILES = {"README.md", "AGENTS.md"}
 
 EXCLUDED_PREFIXES = ("skills/seo-flow/references/prompts/",)
 EXCLUDED_FILES = {"skills/seo-flow/references/flow-prompts.lock"}

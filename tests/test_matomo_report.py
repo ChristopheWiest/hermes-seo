@@ -40,20 +40,10 @@ PUBLIC_IP = "93.184.216.34"
 
 @pytest.fixture(autouse=True)
 def _isolated_credentials(monkeypatch, tmp_path):
-    """Isolate tests from both env vars and any real config file.
-
-    A developer machine may have ~/.config/claude-seo/matomo.json with
-    live credentials; without config isolation, CLI tests would pick it
-    up and make real network calls. CONFIG_PATH points at a missing
-    tmp file by default; tests that need a config file monkeypatch it
-    themselves (later setattr wins over this fixture).
-    """
+    """Isolate tests from ambient environment credentials."""
     for k in ("MATOMO_URL", "MATOMO_API_TOKEN", "MATOMO_TOKEN",
               "MATOMO_SITE_ID", "MATOMO_IDSITE"):
         monkeypatch.delenv(k, raising=False)
-    monkeypatch.setattr(
-        matomo_auth, "CONFIG_PATH", str(tmp_path / "missing-matomo.json")
-    )
 
 
 def _mock_response(status_code: int, body, headers=None) -> Mock:
@@ -164,38 +154,37 @@ def test_load_config_falls_back_to_env(monkeypatch, tmp_path):
     monkeypatch.setenv("MATOMO_URL", "https://env.example.com")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     monkeypatch.setenv("MATOMO_SITE_ID", "7")
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     cfg = matomo_auth.load_config()
     assert cfg["matomo_url"] == "https://env.example.com"
     assert cfg["matomo_token"] == SECRET_TOKEN
     assert cfg["matomo_site_id"] == "7"
 
 
-def test_load_config_falls_back_to_file(monkeypatch, tmp_path):
+def test_load_config_never_reads_legacy_file(monkeypatch, tmp_path):
     config_file = tmp_path / "matomo.json"
     config_file.write_text(json.dumps({
         "matomo_url": "https://file.example.com",
         "matomo_token": "file_token_" + "a" * 22,
         "matomo_site_id": "3",
     }))
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(config_file))
     for k in ("MATOMO_URL", "MATOMO_API_TOKEN", "MATOMO_SITE_ID"):
         monkeypatch.delenv(k, raising=False)
+
+    def deny_file_access(*_args, **_kwargs):
+        raise AssertionError("legacy credential store must not be read")
+
+    monkeypatch.setattr("builtins.open", deny_file_access)
     cfg = matomo_auth.load_config()
-    assert cfg["matomo_url"] == "https://file.example.com"
-    assert cfg["matomo_token"].startswith("file_token_")
-    assert cfg["matomo_site_id"] == "3"
+    assert cfg == {"matomo_url": None, "matomo_token": None, "matomo_site_id": None}
 
 
 def test_check_credentials_unavailable_when_no_url(monkeypatch, tmp_path):
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     status = matomo_auth.check_credentials()
     assert status["available"] is False
     assert "URL" in status["error"] or "url" in status["error"].lower()
 
 
 def test_check_credentials_unavailable_when_no_token(monkeypatch, tmp_path):
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
     status = matomo_auth.check_credentials()
     assert status["available"] is False
@@ -203,7 +192,6 @@ def test_check_credentials_unavailable_when_no_token(monkeypatch, tmp_path):
 
 
 def test_check_credentials_probes_version(monkeypatch, tmp_path):
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     monkeypatch.setenv("MATOMO_SITE_ID", "1")
@@ -225,7 +213,6 @@ def test_check_credentials_probes_version(monkeypatch, tmp_path):
 
 def test_check_credentials_handles_matomo5_version_object(monkeypatch, tmp_path):
     """Matomo 5+ returns API.getMatomoVersion as {"value": "5.13.0"}."""
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
 
@@ -237,7 +224,6 @@ def test_check_credentials_handles_matomo5_version_object(monkeypatch, tmp_path)
 
 
 def test_check_credentials_surfaces_auth_failure(monkeypatch, tmp_path):
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     resp = _mock_response(401, {"result": "error", "message": "no access"})
@@ -250,7 +236,6 @@ def test_check_credentials_surfaces_auth_failure(monkeypatch, tmp_path):
 
 
 def test_check_credentials_surfaces_connection_error(monkeypatch, tmp_path):
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     with _patch_session(side_effect=matomo_auth.requests.exceptions.ConnectionError(
@@ -529,14 +514,10 @@ def test_main_json_emits_envelope(monkeypatch):
     assert rc == 0
 
 
-def test_check_command_honors_site_id_override(monkeypatch, tmp_path):
-    """`check --site-id N` must surface N even when config has no default."""
-    config_file = tmp_path / "matomo.json"
-    config_file.write_text(json.dumps({
-        "matomo_url": "https://m.test",
-        "matomo_token": SECRET_TOKEN,
-    }))
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(config_file))
+def test_check_command_honors_site_id_override(monkeypatch):
+    """`check --site-id N` must surface N even when no default is injected."""
+    monkeypatch.setenv("MATOMO_URL", "https://m.test")
+    monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     resp = _mock_response(200, {"value": "5.13.0"})
     with _patch_session(resp):
         env = matomo_report.check_command(site_id_override="5")
@@ -625,7 +606,6 @@ def test_redirect_off_the_instance_is_refused(monkeypatch):
 
 def test_auth_probe_also_goes_through_the_guard(monkeypatch, tmp_path):
     """matomo_auth --check uses the same pinned path, not a bare requests.post."""
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(tmp_path / "missing.json"))
     monkeypatch.setenv("MATOMO_URL", "http://10.0.0.5:8080")
     monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
     monkeypatch.delenv(matomo_auth.LOCAL_TARGETS_ENV, raising=False)
@@ -693,209 +673,13 @@ def test_resolves_to_private_address_drives_the_installer_hint(monkeypatch):
     assert not matomo_auth.resolves_to_private_address("not-a-url")
 
 
-# --------------------------------------------------------------------------
-# Credential storage: ~/.config/claude-seo/matomo.json, 0600, atomic.
-# --------------------------------------------------------------------------
+def test_matomo_credentials_are_env_only(monkeypatch):
+    monkeypatch.setenv("MATOMO_URL", "https://analytics.example.com")
+    monkeypatch.setenv("MATOMO_API_TOKEN", SECRET_TOKEN)
+    monkeypatch.setenv("MATOMO_SITE_ID", "1")
 
-INSTALL_SH = ROOT / "extensions" / "matomo" / "install.sh"
-INSTALL_PS1 = ROOT / "extensions" / "matomo" / "install.ps1"
-UNINSTALL_SH = ROOT / "extensions" / "matomo" / "uninstall.sh"
-
-
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="asserts 0o600 mode bits, which Windows does not represent",
-)
-def test_save_config_writes_0600(monkeypatch, tmp_path):
-    target = tmp_path / "nested" / "matomo.json"
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(target))
-    matomo_auth.save_config({
-        "matomo_url": "https://analytics.example.com",
-        "matomo_token": SECRET_TOKEN,
-        "matomo_site_id": "1",
-    })
-    assert target.stat().st_mode & 0o777 == 0o600
-    assert json.loads(target.read_text()) == {
+    assert matomo_auth.load_config() == {
         "matomo_url": "https://analytics.example.com",
         "matomo_token": SECRET_TOKEN,
         "matomo_site_id": "1",
     }
-
-
-def test_save_config_drops_empty_and_unknown_keys(monkeypatch, tmp_path):
-    """A blank optional field must not shadow the env fallback later."""
-    target = tmp_path / "matomo.json"
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(target))
-    matomo_auth.save_config({
-        "matomo_url": "https://analytics.example.com",
-        "matomo_token": SECRET_TOKEN,
-        "matomo_site_id": "",
-        "something_else": "dropped",
-    })
-    stored = json.loads(target.read_text())
-    assert "matomo_site_id" not in stored
-    assert "something_else" not in stored
-
-    monkeypatch.setenv("MATOMO_SITE_ID", "9")
-    assert matomo_auth.load_config()["matomo_site_id"] == "9"
-
-
-def test_save_config_is_atomic_and_leaves_no_temp_file(monkeypatch, tmp_path):
-    """A failed write leaves the previous credentials intact, not truncated."""
-    target = tmp_path / "matomo.json"
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(target))
-    matomo_auth.save_config({"matomo_url": "https://old.example.com",
-                             "matomo_token": "old-token"})
-    before = target.read_text()
-
-    def boom(src, dst):
-        raise OSError("simulated crash during rename")
-
-    monkeypatch.setattr(matomo_auth.os, "replace", boom)
-    with pytest.raises(OSError):
-        matomo_auth.save_config({"matomo_url": "https://new.example.com",
-                                 "matomo_token": SECRET_TOKEN})
-
-    assert target.read_text() == before
-    assert SECRET_TOKEN not in target.read_text()
-    assert sorted(f.name for f in tmp_path.iterdir()) == ["matomo.json"]
-
-
-def test_env_still_overrides_the_config_file(monkeypatch, tmp_path):
-    """The env fallback is kept: it is the right answer on a shared machine."""
-    target = tmp_path / "matomo.json"
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(target))
-    matomo_auth.save_config({"matomo_url": "https://file.example.com",
-                             "matomo_token": "file-token"})
-    cfg = matomo_auth.load_config()
-    assert cfg["matomo_url"] == "https://file.example.com"
-
-    # Nothing in the file: env supplies the rest.
-    monkeypatch.setenv("MATOMO_SITE_ID", "42")
-    assert matomo_auth.load_config()["matomo_site_id"] == "42"
-
-
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="asserts 0o600 mode bits, which Windows does not represent",
-)
-def test_load_config_tightens_a_world_readable_file(monkeypatch, tmp_path):
-    """A file left 0644 by an older installer is remediated before it is read."""
-    target = tmp_path / "matomo.json"
-    target.write_text(json.dumps({"matomo_url": "https://m.test",
-                                  "matomo_token": SECRET_TOKEN}))
-    target.chmod(0o644)
-    monkeypatch.setattr(matomo_auth, "CONFIG_PATH", str(target))
-    cfg = matomo_auth.load_config()
-    assert cfg["matomo_token"] == SECRET_TOKEN
-    assert target.stat().st_mode & 0o777 == 0o600
-
-
-def test_installers_do_not_put_the_token_in_settings_json():
-    """The token belongs in ~/.config/claude-seo/matomo.json, not settings.json.
-
-    settings.json is a general-purpose config file that tooling reads, prints,
-    and syncs. The PR's installers wrote MATOMO_API_TOKEN into its env block.
-    """
-    forbidden = (
-        'SETTINGS_JSON=',        # the shell variable the old installer used
-        '$SettingsJson',         # its PowerShell counterpart
-        'setdefault("env"',      # the env-block write itself
-        "setdefault('env'",
-        'env["MATOMO',
-        "env['MATOMO",
-    )
-    for path in (INSTALL_SH, INSTALL_PS1):
-        text = path.read_text(encoding="utf-8")
-        for needle in forbidden:
-            assert needle not in text, (
-                f"{path.name} still writes credentials into settings.json ({needle})"
-            )
-        assert "save_config" in text, f"{path.name} must use matomo_auth.save_config"
-        assert ".config/claude-seo" in text or "CONFIG_PATH" in text, (
-            f"{path.name} must name the credential file it writes"
-        )
-
-
-def test_installers_pass_credentials_through_env_not_source_or_argv():
-    """No credential is interpolated into Python source (issue #189) or put on
-    the command line, where other local users can read it through ps."""
-    sh = INSTALL_SH.read_text(encoding="utf-8")
-    assert "<<'PY'" in sh, "install.sh must use a quoted heredoc"
-    assert "sys.argv" in sh
-    assert ("'" * 3 + "${") not in sh
-
-    ps1 = INSTALL_PS1.read_text(encoding="utf-8")
-    # PowerShell here-strings: @" ... "@ interpolates, so the credential must
-    # arrive in the environment, never inside the here-string or on argv.
-    assert "sys.argv" in ps1
-    assert "$TokenPlain" not in ps1.split('@"')[1].split('"@')[0]
-    assert "$env:CLAUDE_SEO_SECRET = $TokenPlain" in ps1
-    assert "python - $MatomoAuth $MatomoUrl $SiteId" in ps1
-    assert 'CLAUDE_SEO_SECRET="${MATOMO_TOKEN}" python3 -' in sh
-
-
-def test_uninstall_removes_the_config_and_the_legacy_env_entry():
-    text = UNINSTALL_SH.read_text(encoding="utf-8")
-    assert ".config/claude-seo/matomo.json" in text
-    assert "MATOMO_API_TOKEN" in text, "must still clear the pre-v2.4.0 env entry"
-    assert "os.replace" in text, "the settings.json rewrite must stay atomic"
-
-
-def test_installers_warn_about_a_private_instance_address():
-    for path in (INSTALL_SH, INSTALL_PS1):
-        text = path.read_text(encoding="utf-8")
-        assert "--local-target-hint" in text, (
-            f"{path.name} must print the CLAUDE_SEO_LOCAL_TARGETS hint"
-        )
-
-
-_HEREDOC_RE = re.compile(r"<<'PY'\n(.*?)\nPY\n", re.DOTALL)
-
-
-def _installer_writer() -> str:
-    """The credential-writing Python the shell installer feeds to python3."""
-    match = _HEREDOC_RE.search(INSTALL_SH.read_text(encoding="utf-8"))
-    assert match, "install.sh has no quoted <<'PY' heredoc"
-    return match.group(1)
-
-
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="asserts 0o600 mode bits, which Windows does not represent",
-)
-def test_installer_writer_is_inert_against_an_injection_shaped_token(tmp_path):
-    """A token full of shell and Python metacharacters is data, not code."""
-    home = tmp_path / "home"
-    home.mkdir()
-    nasty = "tok" + "'" * 3 + '"$(touch ' + str(tmp_path / "pwned") + ")"
-    proc = subprocess.run(
-        [sys.executable, "-c", _installer_writer(),
-         str(ROOT / "scripts" / "matomo_auth.py"),
-         "https://analytics.example.com", "3"],
-        capture_output=True, text=True,
-        env={**os.environ, "HOME": str(home), "CLAUDE_SEO_SECRET": nasty},
-    )
-    assert proc.returncode == 0, proc.stderr
-    assert not (tmp_path / "pwned").exists(), "installer executed the token"
-
-    written = home / ".config" / "claude-seo" / "matomo.json"
-    assert written.stat().st_mode & 0o777 == 0o600
-    assert json.loads(written.read_text())["matomo_token"] == nasty
-
-
-def test_installer_writer_survives_a_dropped_optional_argument(tmp_path):
-    """PowerShell 5.1 drops an empty native argument; the site ID is optional."""
-    home = tmp_path / "home"
-    home.mkdir()
-    proc = subprocess.run(
-        [sys.executable, "-c", _installer_writer(),
-         str(ROOT / "scripts" / "matomo_auth.py"),
-         "https://analytics.example.com"],   # no site-ID argument
-        capture_output=True, text=True,
-        env={**os.environ, "HOME": str(home), "USERPROFILE": str(home), "CLAUDE_SEO_SECRET": SECRET_TOKEN},
-    )
-    assert proc.returncode == 0, proc.stderr
-    stored = json.loads((home / ".config" / "claude-seo" / "matomo.json").read_text())
-    assert stored["matomo_token"] == SECRET_TOKEN
-    assert "matomo_site_id" not in stored

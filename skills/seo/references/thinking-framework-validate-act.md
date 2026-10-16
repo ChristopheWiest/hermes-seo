@@ -1,6 +1,6 @@
 # Audit Synthesis Framework: VALIDATE and ACT
 
-> Phases 3 and 4 of the 10-principle framework in `thinking-framework.md`. Read that file first for the phase overview, PERCEIVE and ANALYZE.
+> Phases 3 and 4 of the 10-principle framework in `thinking-framework.md`. read_file that file first for the phase overview, PERCEIVE and ANALYZE.
 
 ## VALIDATE
 
@@ -53,7 +53,7 @@ Stop strategizing. Produce the artifact:
   measurable outcomes.
 - Generated schema JSON-LD ready to paste into the site.
 - A content brief with target keywords, outline, and internal links.
-- A PDF via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run google_report.py` when the user asks for one.
+- A PDF via `hermes seo run google_report.py` when the user asks for one.
 - The smallest implementation of the highest-leverage recommendation,
   not the full plan.
 
@@ -63,14 +63,14 @@ Stop strategizing. Produce the artifact:
 
 The audit is a snapshot, not a verdict. Build the feedback loop:
 
-- Capture a baseline via `/seo drift baseline <url>` so subsequent
+- Capture a baseline via `hermes-seo:seo-drift baseline <url>` so subsequent
   audits can prove what changed.
 - Define one or two leading indicators the user should monitor (CrUX
   trend, GSC impressions for a target cluster, brand-mention growth on
   Reddit / YouTube).
 - Schedule a re-audit cadence appropriate to the site's velocity
   (weekly for a high-churn ecommerce; quarterly for a B2B SaaS).
-- Surface what claude-seo itself **could not measure** (offline
+- Surface what Hermes SEO itself **could not measure** (offline
   conversion, brand lift, customer interviews) so the human closes
   those loops.
 

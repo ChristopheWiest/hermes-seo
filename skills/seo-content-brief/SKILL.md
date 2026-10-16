@@ -1,20 +1,8 @@
 ---
 name: seo-content-brief
-description: >
-  Generate competitive SEO content briefs with per-section word counts,
-  competitor scoring, keyword density guidance, and page-type templates.
-  Supports both new page briefs and improve-existing-page briefs.
-  Use when user says "content brief", "write a brief", "content outline",
-  "blog brief", "service page brief", "brief for", "writing brief",
-  "content plan", or "outline for".
-user-invocable: true
-argument-hint: "[url-or-keyword] [page-type]"
+description: "Create evidence-led briefs for SEO content."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: puneetindersingh
-  original_author: puneetindersingh
-  version: "1.0.0"
-  category: seo
 ---
 
 # SEO Content Brief Generator
@@ -73,7 +61,7 @@ Apply the page-type template from `references/page-type-templates.md`, then cust
 
 Every heading, subtopic, keyword, and FAQ you suggest must be something the target website can credibly write about based on its actual services or products.
 
-- Read the site's homepage and sitemap to understand what it does
+- read_file the site's homepage and sitemap to understand what it does
 - Do not borrow competitor structure if those sections cover things this site does not offer
 - Before each suggestion, ask: "Can this website actually deliver on this content?" If no, remove it.
 
@@ -91,11 +79,11 @@ For non-hub pages (single service page, blog post), use site structure to sugges
 
 - Never mention researcher names, framework names, or tool names in the output (no "Ben Goodey method", "Frase.io formula", "Princeton GEO", "Clearscope", "Backlinko")
 - These are internal thinking tools only. The output must read as plain, professional advice.
-- Write for a business owner or content writer, not an SEO academic
+- write_file for a business owner or content writer, not an SEO academic
 
 ## Keyword Density and Placement
 
-Read `references/keyword-density.md` for the full rules. Summary:
+Load with `skill_view(name="hermes-seo:seo-content-brief", file_path="references/keyword-density.md")` for the full rules. Summary:
 
 **Primary keyword use:** Use the primary keyword naturally in high-value locations.
 - Do not optimize to a fixed density. Treat density checks as optional internal readability/stuffing heuristics only.

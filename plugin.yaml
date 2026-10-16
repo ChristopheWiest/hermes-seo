@@ -1,0 +1,14 @@
+name: hermes-seo
+version: "0.1.0"
+manifest_version: 2
+description: SEO workflows, safe analysis scripts, schema feedback, and specialist skills.
+author: yuzushi-dev
+license: MIT
+requires_hermes: ">=0.22.2"
+platforms:
+  - linux
+  - macos
+provides_tools:
+  - hermes_seo_run
+provides_hooks:
+  - transform_tool_result

@@ -7,8 +7,6 @@ Tests for the v2 Checkpoint 5 deliverables:
 
 from __future__ import annotations
 
-import os
-import stat
 import sys
 from pathlib import Path
 
@@ -91,103 +89,6 @@ def test_audit_page_counts_pattern_hits() -> None:
     assert row["third_party_hits"] >= 1
     assert row["commerce_hits"] >= 1
     assert row["affiliate_link_hits"] >= 1
-
-
-# ---------------------------------------------------------------------------
-# Extension structural integrity
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "name,skill_dir",
-    [
-        ("ahrefs", "seo-ahrefs"),
-        ("seranking", "seo-seranking"),
-        ("profound", "seo-profound"),
-        ("bing-webmaster", "seo-bing"),
-        ("matomo", "seo-matomo"),
-        ("unlighthouse", "seo-unlighthouse"),
-    ],
-)
-def test_extension_has_install_skill_and_docs(name: str, skill_dir: str) -> None:
-    base = _REPO_ROOT / "extensions" / name
-    assert (base / "install.sh").is_file(), f"{name}/install.sh missing"
-    assert (base / "install.ps1").is_file(), f"{name}/install.ps1 missing"
-    assert (base / "skills" / skill_dir / "SKILL.md").is_file(), (
-        f"{name}/skills/{skill_dir}/SKILL.md missing"
-    )
-    assert (base / "uninstall.sh").is_file(), f"{name}/uninstall.sh missing"
-    docs_dir = base / "docs"
-    assert docs_dir.is_dir(), f"{name}/docs/ missing"
-    # At least one *-SETUP.md file in docs.
-    assert any(p.suffix == ".md" for p in docs_dir.iterdir()), (
-        f"{name}/docs/ has no Markdown file"
-    )
-
-
-_POSIX_ONLY = pytest.mark.skipif(
-    os.name != "posix", reason="the executable bit is a POSIX mode bit; Windows has none"
-)
-
-
-@_POSIX_ONLY
-@pytest.mark.parametrize(
-    "name", ["ahrefs", "seranking", "profound", "bing-webmaster", "matomo",
-            "unlighthouse"],
-)
-def test_extension_install_script_is_executable(name: str) -> None:
-    install = _REPO_ROOT / "extensions" / name / "install.sh"
-    mode = install.stat().st_mode
-    assert mode & stat.S_IXUSR, f"{name}/install.sh must be executable for chmod"
-
-
-@_POSIX_ONLY
-def test_every_extension_install_and_uninstall_is_executable() -> None:
-    """All extensions ship executable install.sh + uninstall.sh — including v1 ones."""
-    ext_root = _REPO_ROOT / "extensions"
-    failures = []
-    for ext in sorted(p for p in ext_root.iterdir() if p.is_dir()):
-        for script_name in ("install.sh", "uninstall.sh"):
-            script = ext / script_name
-            if not script.exists():
-                continue
-            mode = script.stat().st_mode
-            if not (mode & stat.S_IXUSR):
-                failures.append(f"{ext.name}/{script_name}")
-    assert not failures, (
-        "Extension scripts missing user-exec bit (chmod +x):\n  "
-        + "\n  ".join(failures)
-    )
-
-
-@pytest.mark.parametrize(
-    "name,skill_dir",
-    [
-        ("ahrefs", "seo-ahrefs"),
-        ("seranking", "seo-seranking"),
-        ("profound", "seo-profound"),
-        ("bing-webmaster", "seo-bing"),
-        ("matomo", "seo-matomo"),
-        ("unlighthouse", "seo-unlighthouse"),
-    ],
-)
-def test_extension_skillmd_has_required_frontmatter(
-    name: str, skill_dir: str,
-) -> None:
-    skillmd = (_REPO_ROOT / "extensions" / name / "skills"
-               / skill_dir / "SKILL.md")
-    text = skillmd.read_text(encoding="utf-8")
-    head = text.split("---", 2)[1] if text.startswith("---") else ""
-    assert f"name: {skill_dir}" in head, f"{name}: frontmatter name must be {skill_dir}"
-    assert "description:" in head, f"{name}: missing description"
-    assert "metadata:" in head, f"{name}: missing metadata block"
-    import json as _json
-    _expected = _json.loads(
-        (_REPO_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
-    )["version"]
-    assert f'version: "{_expected}"' in head, (
-        f"{name}: SKILL.md must declare version {_expected} (from plugin.json)"
-    )
 
 
 # ---------------------------------------------------------------------------

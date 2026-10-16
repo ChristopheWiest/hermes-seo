@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
 """
-Validate that the Claude Banana MCP server is properly configured.
+Validate the Banana provider prerequisites exposed to this Hermes process.
 
 Checks:
-1. Claude Code ~/.claude.json has the MCP entry
-2. API key is present
+1. The profile-scoped API key was injected
+2. A nonsecret model ID is configured
 3. Node.js/npx is available
-4. Output directory exists or can be created
+4. The output directory exists or can be created
 
 Usage:
     python3 validate_setup.py
 """
 
 import argparse
-import json
+import os
 import shutil
 import sys
 from pathlib import Path
 
-SETTINGS_PATH = Path.home() / ".claude.json"
-MCP_NAME = "nanobanana-mcp"
 OUTPUT_DIR = Path.home() / "Documents" / "nanobanana_generated"
 
 
@@ -34,80 +32,38 @@ def check(label: str, passed: bool, detail: str = "") -> bool:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Validate the Claude Banana MCP server setup."
+        description="Validate Banana prerequisites in the active Hermes profile."
+    )
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("NANOBANANA_MODEL"),
+        help="Nonsecret model ID (or set NANOBANANA_MODEL).",
     )
     return parser.parse_args()
 
 
 def main() -> int:
-    parse_args()
+    args = parse_args()
 
-    print("Claude Banana - Setup Validation")
+    print("Banana - Hermes Profile Validation")
     print("=" * 40)
     results = []
 
-    # 1. Settings file exists
+    key = os.environ.get("GOOGLE_AI_API_KEY", "")
     results.append(check(
-        "Claude Code ~/.claude.json exists",
-        SETTINGS_PATH.exists(),
-        str(SETTINGS_PATH),
+        "GOOGLE_AI_API_KEY is available",
+        bool(key),
+        "injected by Hermes" if key else "missing from active profile",
     ))
 
-    if not SETTINGS_PATH.exists():
-        print("\nCannot continue without ~/.claude.json.")
-        return 1
+    model = args.model or ""
+    results.append(check(
+        "NANOBANANA_MODEL is set",
+        bool(model),
+        model or "missing from runtime configuration",
+    ))
 
-    # 2. Load and parse settings
-    try:
-        with open(SETTINGS_PATH) as f:
-            settings = json.load(f)
-        results.append(check("~/.claude.json is valid JSON", True))
-    except json.JSONDecodeError as e:
-        results.append(check("~/.claude.json is valid JSON", False, str(e)))
-        return 1
-
-    # 3. MCP entry exists
-    servers = settings.get("mcpServers", {})
-    has_mcp = MCP_NAME in servers
-    results.append(check(f"MCP server '{MCP_NAME}' configured", has_mcp))
-
-    if has_mcp:
-        mcp = servers[MCP_NAME]
-
-        # 4. Command is npx
-        results.append(check(
-            "Command is 'npx'",
-            mcp.get("command") == "npx",
-            mcp.get("command", "(missing)"),
-        ))
-
-        # 5. Package is correct
-        args = mcp.get("args", [])
-        has_pkg = "@ycse/nanobanana-mcp" in args
-        results.append(check(
-            "Package is @ycse/nanobanana-mcp",
-            has_pkg,
-            str(args),
-        ))
-
-        # 6. API key present
-        env = mcp.get("env", {})
-        key = env.get("GOOGLE_AI_API_KEY", "")
-        results.append(check(
-            "GOOGLE_AI_API_KEY is set",
-            bool(key),
-            f"...{key[-4:]}" if len(key) > 12 else "(empty or short)",
-        ))
-
-        # 7. Model configured
-        model = env.get("NANOBANANA_MODEL", "")
-        results.append(check(
-            "NANOBANANA_MODEL is set",
-            bool(model),
-            model or "(not set, will use package default)",
-        ))
-
-    # 8. Node.js/npx available
+    # Compatible MCP providers commonly use npx; direct REST helpers do not.
     has_npx = shutil.which("npx") is not None
     results.append(check(
         "npx is available in PATH",
@@ -115,7 +71,7 @@ def main() -> int:
         shutil.which("npx") or "not found",
     ))
 
-    # 9. Output directory
+    # Output directory
     if OUTPUT_DIR.exists():
         results.append(check("Output directory exists", True, str(OUTPUT_DIR)))
     else:

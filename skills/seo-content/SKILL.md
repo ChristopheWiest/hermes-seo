@@ -1,17 +1,8 @@
 ---
 name: seo-content
-description: >
-  Evaluate page content for usefulness, E-E-A-T, readability, thinness, and AI
-  citation readiness, plus last-mile draft cleanup (AI-typical phrasing and
-  invisible Unicode watermark characters). Use for content-only analysis, not
-  full-page technical checks.
-user-invocable: true
-argument-hint: "[url]"
+description: "Review content quality, expertise, and search intent."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Content Quality & E-E-A-T Analysis
@@ -36,7 +27,7 @@ merged into core during the March 2024 update).
 
 ## E-E-A-T Framework (updated Sept 2025 QRG)
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/seo/references/eeat-framework.md` for full criteria and `${CLAUDE_PLUGIN_ROOT}/skills/seo/references/eeat-scoring-guide.md` for score bands.
+Load `skill_view(name="hermes-seo:seo", file_path="references/eeat-framework.md")` for full criteria and `skill_view(name="hermes-seo:seo", file_path="references/eeat-scoring-guide.md")` for score bands.
 
 ### Experience (first-hand signals)
 - Original research, case studies, before/after results
@@ -135,7 +126,7 @@ Google's raters assess low-quality, scaled, copied, or AI-generated main content
 
 > **Gen-AI optimization is SEO (Google docs, published 2026-05-15, last updated 2026-07-10):** the official "optimizing for generative AI features" guide states you do **not** need new AI files, markup, Markdown, content chunking, or AI-specific rewrites; chasing inauthentic "mentions" is unhelpful. AEO/GEO is rebranded SEO rooted in core ranking/quality.
 
-> **Honest scoping (Google docs, 2026-06-05):** per "Using third-party SEO tools, services, and advice," no tool guarantees rankings and third-party tools have no access to Google's internal ranking data. claude-seo's scores are **heuristics**, not Google-internal signals, so say so in reports, and validate GEO/AEO findings against Google's official guidance (Search Console is the first-party source).
+> **Honest scoping (Google docs, 2026-06-05):** per "Using third-party SEO tools, services, and advice," no tool guarantees rankings and third-party tools have no access to Google's internal ranking data. Hermes SEO's scores are **heuristics**, not Google-internal signals, so say so in reports, and validate GEO/AEO findings against Google's official guidance (Search Console is the first-party source).
 
 ## Draft Cleanup: AI Phrasing & Invisible Watermarks
 
@@ -143,8 +134,8 @@ For "humanize this", "remove watermarks", or "clean up this draft", run the
 bundled cleanup script on the user's own content:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run content_humanize.py draft.md -o cleaned.md
-cat draft.md | "${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run content_humanize.py --json
+hermes seo run content_humanize.py draft.md -o cleaned.md
+cat draft.md | hermes seo run content_humanize.py --json
 ```
 
 Two deterministic passes, both logged in the JSON output:
@@ -187,7 +178,7 @@ Optimize for AI search engines (ChatGPT, Perplexity, Google AI Overviews):
 - **Multi-platform tracking:** Monitor visibility across Google AI Overviews, AI Mode, ChatGPT, Perplexity, and Bing Copilot, not just traditional rankings. Treat AI citation as a standalone KPI alongside organic rankings and traffic.
 
 **Generative Engine Optimization (GEO):**
-Per Google's AI optimization guide, "optimizing for generative AI search is optimizing for the search experience, and thus still SEO": AI Overviews and AI Mode are grounded in the same ranking and quality systems as classic Search. The optimization signals that matter (quotability, attribution, heading hierarchy, freshness) are SEO fundamentals applied to AI-search surfaces, not a separate discipline. Cross-reference the `seo-geo` skill for detailed workflows; both surfaces share the primary-source synthesis in `${CLAUDE_PLUGIN_ROOT}/skills/seo-geo/references/google-ai-optimization-guide.md`.
+Per Google's AI optimization guide, "optimizing for generative AI search is optimizing for the search experience, and thus still SEO": AI Overviews and AI Mode are grounded in the same ranking and quality systems as classic Search. The optimization signals that matter (quotability, attribution, heading hierarchy, freshness) are SEO fundamentals applied to AI-search surfaces, not a separate discipline. Cross-reference the `seo-geo` skill for detailed workflows; both surfaces share the primary-source synthesis in `skill_view(name="hermes-seo:seo-geo", file_path="references/google-ai-optimization-guide.md")`.
 
 ## Content Freshness
 
@@ -201,7 +192,7 @@ Before attributing a traffic or ranking change to anything, list the confirmed
 Google updates in that window from the primary-source ledger:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run seo_updates.py --since <yyyy-mm> --json
+hermes seo run seo_updates.py --since <yyyy-mm> --json
 ```
 
 Every entry cites a Google-owned URL. If `freshness.stale` is true, say the
@@ -246,4 +237,4 @@ If DataForSEO MCP tools are available, use `kw_data_google_ads_search_volume` fo
 
 ## FLOW Framework Integration
 
-For prompt-guided content optimization, use `/seo flow optimize <url>` and `/seo flow win <url>`: FLOW's optimize and win prompts provide structured E-E-A-T improvement and BOFU conversion workflows.
+For prompt-guided content optimization, use `hermes-seo:seo-flow optimize <url>` and `hermes-seo:seo-flow win <url>`: FLOW's optimize and win prompts provide structured E-E-A-T improvement and BOFU conversion workflows.

@@ -3,7 +3,7 @@ name: seo-unlighthouse
 description: Multi-page Lighthouse audit via the MIT-licensed Unlighthouse CLI. Free-tier alternative to running PageSpeed against every URL on a site, no API quota burn, runs locally.
 metadata:
   version: "2.4.2"
-compatibility: "Requires Node 18+ and the unlighthouse npm package. Run extensions/unlighthouse/install.sh to pre-warm."
+compatibility: "Requires Node 18+ and the unlighthouse npm package. Run Hermes plugin/provider setup to pre-warm."
 ---
 
 # seo-unlighthouse
@@ -17,19 +17,12 @@ and aggregate the results. Useful when:
 
 ## Prerequisites
 
-- Run `extensions/unlighthouse/install.sh` (no API key needed).
-- Node 18+ on `$PATH`.
+- Node 18+ on `$PATH` and the `unlighthouse` npm package.
+- This extension file is an optional companion reference, not a registered skill.
 
 ## Routing
 
-| Command | Effect |
-|---|---|
-| `/seo unlighthouse <url>` | Mobile audit, up to 200 routes, JSON+HTML report in a temp dir |
-| `/seo unlighthouse <url> --device desktop` | Desktop form factor |
-| `/seo unlighthouse <url> --max-routes 50 --output-dir ./reports` | Cap + persist |
-
-All flags forward through `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run unlighthouse_run.py`, which handles
-url_safety pre-flight and subprocess timeout management.
+Ask the registered `hermes-seo:seo-performance` or `hermes-seo:seo-audit` workflow to run the local Unlighthouse audit. The bundled runtime helper is `hermes seo run unlighthouse_run.py <url> [options]`; no provider-specific `hermes-seo:seo unlighthouse` command exists.
 
 ## Output handling
 
@@ -53,4 +46,4 @@ from the overall `--timeout` subprocess guard (default 600s).
 
 - For single-URL field data (CrUX), use `seo-google psi` / `seo-google crux`.
 - For LCP subpart decomposition on slow pages, use the
-  `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run lcp_subparts.py` workflow (Phase C).
+  `hermes_seo_run {"script":"lcp_subparts.py","args":[]}` workflow (Phase C).

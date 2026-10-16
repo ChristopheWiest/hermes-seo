@@ -3,7 +3,7 @@ name: seo-bing
 description: Bing Webmaster Tools + IndexNow extension. Microsoft Copilot citations are fed by the Bing index; this skill makes Bing visibility, link data, and IndexNow URL submission first-class.
 metadata:
   version: "2.4.2"
-compatibility: "Requires BING_WEBMASTER_API_KEY and (optionally) INDEXNOW_KEY in ~/.claude/settings.json env. Run extensions/bing-webmaster/install.sh to configure."
+compatibility: "Requires BING_WEBMASTER_API_KEY and optionally INDEXNOW_KEY as Hermes profile-scoped secrets."
 ---
 
 # seo-bing
@@ -15,20 +15,20 @@ specifically for **Amazon/Bing/Naver/Seznam.cz/Yandex/Yep indexing** and
 
 ## Prerequisites
 
-- Run `extensions/bing-webmaster/install.sh` or `install.ps1`.
 - A Bing Webmaster Tools API key.
-- Optional: an IndexNow host key (32+ chars) published at the URL
-  declared as `INDEXNOW_KEY_LOCATION`.
+- Optional: an IndexNow host key (32+ chars) stored as the active profile's
+  `INDEXNOW_KEY` secret and published at the nonsecret URL declared as
+  `INDEXNOW_KEY_LOCATION`. Never pass the key in command arguments.
 
 ## Routing
 
 | Command | Underlying script |
 |---|---|
-| `/seo bing links <url>` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run bing_webmaster.py links <url>` |
-| `/seo bing compare <urlA> <urlB>` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run bing_webmaster.py compare <urlA> <urlB>`; both properties must be registered to the API account |
-| `/seo bing submit <url>` (single URL) | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run indexnow_submit.py --host ... --urls <url>` |
-| `/seo bing submit-batch <file>` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run indexnow_submit.py --host ... --urls-file <file>` |
-| `/seo bing verify-indexnow` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run indexnow_submit.py --host ... --verify-only` |
+| Use the registered `hermes-seo:seo-backlinks` workflow with Bing Webmaster/IndexNow links <url>` | `hermes_seo_run {"script":"bing_webmaster.py","args":["links","<url>"]}` |
+| Use the registered `hermes-seo:seo-backlinks` workflow with Bing Webmaster/IndexNow compare <urlA> <urlB>` | `hermes_seo_run {"script":"bing_webmaster.py","args":["compare","<urlA>","<urlB>"]}`; both properties must be registered to the API account |
+| Submit one URL after explicit approval | `hermes_seo_run {"script":"indexnow_submit.py","args":["--host","example.com","--key-location","https://example.com/indexnow-key.txt","--urls","https://example.com/new-page","--json"]}` |
+| Submit a reviewed batch after explicit approval | `hermes_seo_run {"script":"indexnow_submit.py","args":["--host","example.com","--key-location","https://example.com/indexnow-key.txt","--urls-file","urls.txt","--json"]}` |
+| Verify the published key without submitting | `hermes_seo_run {"script":"indexnow_submit.py","args":["--host","example.com","--key-location","https://example.com/indexnow-key.txt","--verify-only","--json"]}` |
 
 ## When this skill applies
 

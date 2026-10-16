@@ -1,16 +1,8 @@
 ---
 name: seo-sitemap
-description: >
-  Analyze existing XML sitemaps or generate new ones with industry templates.
-  Validates format, URLs, and structure. Use when user says "sitemap",
-  "generate sitemap", "sitemap issues", or "XML sitemap".
-user-invocable: true
-argument-hint: "[url or generate]"
+description: "Audit or generate XML sitemaps."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Sitemap Analysis & Generation
@@ -20,7 +12,7 @@ metadata:
 Discover candidates before reporting a sitemap missing:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run sitemap_discovery.py <url> --json
+hermes seo run sitemap_discovery.py <url> --json
 ```
 
 The helper reads every bounded `Sitemap:` declaration in robots.txt, validates
@@ -84,7 +76,7 @@ Google documents three subtypes with their own rules, validate per-subtype:
 
 ### Process
 1. Ask for business type (or auto-detect from existing site)
-2. Load industry template from `../seo-plan/assets/` directory
+2. Load industry template from `skills/seo-plan/assets/` directory
 3. Interactive structure planning with user
 4. Apply quality gates:
    - ⚠️ WARNING at 30+ location pages (require 60%+ unique content)

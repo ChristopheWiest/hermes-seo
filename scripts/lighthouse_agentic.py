@@ -380,7 +380,6 @@ def main() -> None:
     parser.add_argument("url", nargs="?", help="URL to test through PSI")
     parser.add_argument("--from-json", help="Read a saved Lighthouse or PSI JSON file instead")
     parser.add_argument("--strategy", choices=["mobile", "desktop", "both"], default="mobile")
-    parser.add_argument("--api-key", help="Google API key (overrides config/env)")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
 
@@ -399,7 +398,7 @@ def main() -> None:
         reports.append(summarize(extract_lhr(data), "file"))
     else:
         from google_auth import get_api_key
-        api_key = args.api_key or get_api_key()
+        api_key = get_api_key()
         strategies = ["mobile", "desktop"] if args.strategy == "both" else [args.strategy]
         for strategy in strategies:
             try:

@@ -1,12 +1,12 @@
 name: Feature Request
-description: Suggest a new feature or improvement for Claude SEO
+description: Suggest a new feature or improvement for Hermes SEO
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Have a great idea? We'd love to hear it! For general discussion, consider using [GitHub Discussions](https://github.com/AgriciDaniel/claude-seo/discussions) instead.
+        Describe the user problem and the behavior you would like Hermes SEO to provide.
   - type: textarea
     id: problem
     attributes:

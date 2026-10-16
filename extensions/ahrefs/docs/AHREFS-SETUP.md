@@ -1,69 +1,7 @@
-# Ahrefs extension setup
+# Ahrefs setup
 
-Wires the official [`@ahrefs/mcp@0.0.11`](https://www.npmjs.com/package/@ahrefs/mcp)
-server into your Claude Code session so the `seo-ahrefs` skill can call
-live Ahrefs data.
+The source extension targets the official [`@ahrefs/mcp`](https://www.npmjs.com/package/@ahrefs/mcp) server. This fork does not install it or edit provider settings. Configure a Hermes-compatible Ahrefs MCP server using the provider's current documentation, keep the token in Hermes' secret/config mechanism, then confirm the expected tools are available in Hermes before asking it to use the `hermes-seo:seo-ahrefs` workflow.
 
-## Install
+The source setup previously pinned `@ahrefs/mcp@0.0.11`; treat that version and its configuration details as historical, not as a current compatibility claim. Ahrefs API usage may consume units. Check current account pricing before calls. The bundled DataForSEO cost tracker is available, when allowlisted, through `hermes seo run dataforseo_costs.py`.
 
-```bash
-./extensions/ahrefs/install.sh        # Linux / macOS
-.\extensions\ahrefs\install.ps1       # Windows PowerShell
-```
-
-The installer:
-
-1. Verifies Node 18+ is on `$PATH` (the `.sh` installer also verifies Python 3,
-   used only for its `~/.claude.json` merge script; the `.ps1` installer
-   merges natively with `ConvertTo-Json` and needs no Python).
-2. Prompts for your Ahrefs API token (input is hidden).
-3. Pre-warms the `@ahrefs/mcp@0.0.11` npm package via `npx --yes` so the first
-   MCP call doesn't spend 10+ seconds downloading.
-4. Copies `skills/seo-ahrefs/SKILL.md` into `~/.claude/skills/seo-ahrefs/`.
-5. Atomically writes `mcpServers.ahrefs` into `~/.claude.json`
-   with your token in the `env` block. The settings file is `chmod 0o600`
-   after the merge (same hardening as the OAuth token).
-
-## Verify
-
-Open a new Claude Code session and ask:
-
-```
-/seo ahrefs metrics https://example.com
-```
-
-If you see "Ahrefs MCP not connected", the npm package is not yet cached.
-Re-run the installer to pre-warm or run `npx --yes --package=@ahrefs/mcp@0.0.11 mcp --help` manually.
-
-## Rotate token
-
-```bash
-./extensions/ahrefs/install.sh   # re-runs the prompt; overwrites the env entry
-```
-
-The Python merge script is idempotent: re-running only replaces the
-`mcpServers.ahrefs.env.AHREFS_API_TOKEN` value, leaving the rest of
-`~/.claude.json` intact.
-
-## Uninstall
-
-```bash
-./extensions/ahrefs/uninstall.sh    # removes the skill + clears the MCP entry
-```
-
-## Cost model
-
-Ahrefs charges per "unit". A unit covers most read endpoints (domain
-metrics, backlink data) at 1 unit each; bulk endpoints cost more. The
-`"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run dataforseo_costs.py` cost tracker shipped with claude-seo
-generalises across vendors; see the DataForSEO extension's
-`references/cost-tiers.md` for the budget-preset pattern to mirror when
-wiring Ahrefs accounting.
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `Error: AHREFS_API_TOKEN is empty` | Installer didn't capture input | Re-run installer; type token at the prompt, then press Enter |
-| `npx: package not found` | Offline run / fresh machine | Run with internet on; the installer pre-warms but the cache needs network |
-| 401 from any `/seo ahrefs *` command | Token revoked / expired | Generate a new token at https://ahrefs.com/api and re-run the installer |
+If tools are missing, check the Hermes MCP server status and provider authentication. Do not put tokens in shell history or this repository. No live provider call has been verified in this fork.

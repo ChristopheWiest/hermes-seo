@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Matomo Reporting API client for Claude SEO.
+Matomo Reporting API client for Hermes SEO.
 
 Queries the Matomo Reporting API for organic traffic, top landing pages,
 device and country breakdowns, and referrer analysis. Self-hosted Matomo
@@ -84,7 +84,7 @@ def _request(url: str, token: str, params: dict, timeout: int = DEFAULT_TIMEOUT)
 
     Matomo accepts both GET and POST. POST keeps the token out of URLs and
     access logs. ``matomo_auth.post_to_instance`` applies the SSRF guard: the
-    endpoint is validated and DNS-pinned, ``CLAUDE_SEO_LOCAL_TARGETS`` is the
+    endpoint is validated and DNS-pinned, ``HERMES_SEO_LOCAL_TARGETS`` is the
     only way a private instance is reached, and a redirect off the instance is
     refused rather than followed.
 
@@ -549,7 +549,7 @@ def check_command(site_id_override: Optional[str] = None) -> dict:
 
     if not url or not token:
         return _envelope("error", None,
-                         "Matomo credentials incomplete. Run python matomo_auth.py --setup.")
+                         "Matomo profile settings incomplete. Configure MATOMO_URL and MATOMO_API_TOKEN through Hermes.")
 
     probe = _probe_version(url, token)
     if not probe["ok"]:
@@ -602,9 +602,7 @@ def main() -> int:
         site_id = _resolve_site_id(args)
 
         if not url:
-            print("Error: MATOMO_URL is not configured. "
-                  "Set MATOMO_URL env or add 'matomo_url' to "
-                  f"{_SCRIPTS_DIR}/../../scripts/matomo_auth.py config.",
+            print("Error: MATOMO_URL is not configured in the active Hermes profile.",
                   file=sys.stderr)
             return 1
         if not token:

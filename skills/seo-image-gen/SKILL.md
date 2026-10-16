@@ -1,14 +1,8 @@
 ---
 name: seo-image-gen
-description: "AI image generation for SEO assets: OG/social preview images, blog hero images, schema images, product photography, infographics. Powered by Gemini via nanobanana-mcp. Requires banana extension installed. Use when user says \"generate image\", \"OG image\", \"social preview\", \"hero image\", \"blog image\", \"product photo\", \"infographic\", \"seo image\", \"create visual\", \"image-gen\", \"favicon\", \"schema image\", \"pinterest pin\", \"generate visual\", \"banner\", or \"thumbnail\"."
-argument-hint: "[og|hero|product|infographic|custom|batch] <description>"
-user-invocable: true
+description: "Create and refine images for SEO use cases."
+author: Daniel Agrici
 license: MIT
-compatibility: "Requires nanobanana MCP server"
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # SEO Image Gen: AI Image Generation for SEO Assets (Extension)
@@ -19,35 +13,31 @@ aspect ratios, and resolution defaults.
 
 ## Architecture Note
 
-This extension is built on [Claude Banana](https://github.com/AgriciDaniel/banana-claude),
-the standalone AI image generation skill for Claude Code.
+This extension adapts the Banana Creative Director image-generation workflow for Hermes SEO use cases.
 
 This skill has two components with distinct roles:
-- **SKILL.md** (this file): Handles interactive `/seo image-gen` commands for generating images
-- **Agent** (`agents/seo-image-gen.md`): Audit-only analyst spawned during `/seo audit` to assess existing OG/social images and produce a generation plan (never auto-generates)
+- **SKILL.md** (this file): Handles interactive `hermes-seo:seo-image-gen` commands for generating images
+- **Audit role** (`hermes-seo:role-seo-image-gen`): assesses existing OG/social images and produces a generation plan during `hermes-seo:seo-audit`; it never auto-generates images
 
 ## Prerequisites
 
-This skill requires the banana extension to be installed:
-```bash
-./extensions/banana/install.sh
-```
+This skill requires a compatible Banana MCP server configured in Hermes. Store `GOOGLE_AI_API_KEY` as a secret in the active Hermes profile; the parent native tool injects it only for Banana provider scripts. Never place the key in command arguments. See the Banana entry in `docs/EXTENSIONS.md` for the provider setup boundary; this plugin does not ship a provider installer.
 
 **Check availability:** Before using any image generation tool, verify the MCP server
 is connected by checking if `gemini_generate_image` or `set_aspect_ratio` tools are
-available. If tools are not available, inform the user the extension is not installed
-and provide install instructions.
+available. If tools are not available, report that the provider connection is not configured
+and point to `docs/EXTENSIONS.md` for the setup boundary.
 
 ## Quick Reference
 
 | Command | What it does |
 |---------|-------------|
-| `/seo image-gen og <description>` | Generate OG/social preview image (1200x630 feel) |
-| `/seo image-gen hero <description>` | Blog hero image (widescreen, dramatic) |
-| `/seo image-gen product <description>` | Product photography (clean, white BG) |
-| `/seo image-gen infographic <description>` | Infographic visual (vertical, data-heavy) |
-| `/seo image-gen custom <description>` | Custom image with full Creative Director pipeline |
-| `/seo image-gen batch <description> [N]` | Generate N variations (default: 3) |
+| `hermes-seo:seo-image-gen og <description>` | Generate OG/social preview image (1200x630 feel) |
+| `hermes-seo:seo-image-gen hero <description>` | Blog hero image (widescreen, dramatic) |
+| `hermes-seo:seo-image-gen product <description>` | Product photography (clean, white BG) |
+| `hermes-seo:seo-image-gen infographic <description>` | Infographic visual (vertical, data-heavy) |
+| `hermes-seo:seo-image-gen custom <description>` | Custom image with full Creative Director pipeline |
+| `hermes-seo:seo-image-gen batch <description> [N]` | Generate N variations (default: 3) |
 
 ## SEO Image Use Cases
 
@@ -84,14 +74,14 @@ If the user mentions a brand or has SEO presets configured:
 ```bash
 # Use the installed Banana MCP/tool configuration to list presets.
 ```
-Load matching preset and apply as defaults. Also check `references/seo-image-presets.md`
-for SEO-specific preset templates.
+Load matching preset and apply as defaults. Also check
+`references/seo-image-presets.md` with `skill_view(name="hermes-seo:seo-image-gen", file_path="references/seo-image-presets.md")`.
 
 ## Post-Generation SEO Checklist
 
 After every successful generation, guide the user on:
 
-1. **Alt text**:Write descriptive, keyword-rich alt text for the generated image
+1. **Alt text**:write_file descriptive, keyword-rich alt text for the generated image
 2. **File naming**:Rename to SEO-friendly format: `keyword-description-widthxheight.webp`
 3. **WebP conversion**:Convert to WebP for optimal page speed:
    ```bash
@@ -139,17 +129,17 @@ Approximate costs:
 
 | Error | Resolution |
 |-------|-----------|
-| MCP not configured | Run `./extensions/banana/install.sh` |
+| MCP not configured | Configure a compatible Banana MCP server in Hermes; see `docs/EXTENSIONS.md` |
 | API key invalid | New key at https://aistudio.google.com/apikey |
 | Rate limited (429) | Wait 60s, retry. Free tier: ~10 RPM / ~500 RPD |
 | `IMAGE_SAFETY` | Rephrase prompt - see `references/prompt-adaptation-safety.md` |
-| MCP unavailable | Configure MCP with `./extensions/banana/install.sh`; claude-seo does not vendor a local generation fallback script |
-| Extension not installed | Show install instructions: `./extensions/banana/install.sh` |
+| MCP unavailable | Configure a compatible Banana MCP server in Hermes; this plugin does not vendor a local generation fallback script |
+| Extension not configured | Point the user to the provider setup notes in `docs/EXTENSIONS.md` |
 
 ## Cross-Skill Integration
 
-- **seo-images** (analysis) feeds into **seo-image-gen** (generation): audit results from `/seo images` identify missing or low-quality images; use those findings to drive `/seo image-gen` commands
-- **seo-audit** spawns the seo-image-gen **agent** (not this skill) to analyze OG/social images across the site and produce a prioritized generation plan
+- **seo-images** (analysis) feeds into **seo-image-gen** (generation): audit results from `hermes-seo:seo-images` identify missing or low-quality images; use those findings to drive `hermes-seo:seo-image-gen` commands
+- **seo-audit** delegates to `hermes-seo:role-seo-image-gen` to analyze OG/social images across the site and produce a prioritized generation plan
 - **seo-schema** can consume generated images: after generation, suggest `ImageObject` schema markup pointing to the new assets
 
 ## Reference Documentation
@@ -163,7 +153,7 @@ Load on-demand. Do NOT load all at startup:
 - `references/post-processing.md`:ImageMagick/FFmpeg pipeline recipes
 - `references/cost-tracking.md`:Pricing, usage tracking
 - `references/presets.md`:Brand preset management
-- `references/seo-image-presets.md`:SEO-specific preset templates
+- `references/seo-image-presets.md`: SEO-specific preset templates
 
 ## Response Format
 

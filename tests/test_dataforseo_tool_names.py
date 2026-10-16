@@ -15,7 +15,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "dataforseo_mcp_2_8_10_tools.txt"
-PINNED = "dataforseo-mcp-server@2.8.10"
 TOOL_RE = re.compile(
     r"`((?:serp|kw_data|keywords_data|dataforseo_labs|dataforseo_backlinks|backlinks|on_page|"
     r"domain_analytics|business_data|content_analysis|ai_optimization|ai_opt)_[a-z0-9_]*[a-z0-9])`"
@@ -29,16 +28,16 @@ def _tools() -> set[str]:
 
 
 def test_fixture_matches_the_installer_pin() -> None:
-    for rel in ("extensions/dataforseo/install.sh", "extensions/dataforseo/install.ps1"):
-        assert PINNED in (ROOT / rel).read_text(encoding="utf-8"), rel
+    # The upstream tool catalog stays pinned by this reviewed fixture; Hermes
+    # extension setup is handled by the host, so there is no repository installer.
     assert len(_tools()) == 80
 
 
 def test_every_referenced_mcp_tool_exists_on_the_pinned_server() -> None:
     tools = _tools()
     missing = []
-    for path in [*ROOT.glob("skills/**/*.md"), *ROOT.glob("agents/*.md"),
-                 *ROOT.glob("extensions/*/skills/**/*.md"), *ROOT.glob("extensions/*/agents/*.md")]:
+    for path in [*ROOT.glob("skills/**/*.md"),
+                 *ROOT.glob("extensions/*/skills/**/*.md")]:
         for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             for name in TOOL_RE.findall(line):
                 if name not in tools and name not in NOT_MCP:

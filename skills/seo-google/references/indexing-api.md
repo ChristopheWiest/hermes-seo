@@ -84,7 +84,7 @@ Content-Type: application/json
 | Limit | Value | Scope |
 |-------|-------|-------|
 | Publish requests | **200/day** (default) | Per project |
-| Read-only requests | 180/min | Per project |
+| read_file-only requests | 180/min | Per project |
 | Total requests | 380/min | Per project |
 
 Request a quota increase: [Indexing API Quota Increase Form](https://developers.google.com/search/apis/indexing-api/v3/quota)

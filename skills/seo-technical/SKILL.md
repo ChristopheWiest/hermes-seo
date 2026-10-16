@@ -1,16 +1,13 @@
 ---
+
+OAuth services are disabled in the catalog build. Google Search Console checks
+are unavailable because Hermes
+does not provide an approved Google OAuth route. Use the static-key Google
+services documented in `seo-google` instead.
 name: seo-technical
-description: >
-  Audit technical SEO across crawlability, indexability, security, URLs, mobile,
-  Core Web Vitals, rendering, structured data, and IndexNow. Exclude content
-  strategy and backlinks.
-user-invocable: true
-argument-hint: "[url]"
+description: "Audit crawlability, indexability, and technical SEO."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Technical SEO Audit
@@ -19,7 +16,7 @@ metadata:
 
 ### 1. Crawlability
 - robots.txt: exists, valid, not blocking important resources
-- XML sitemap: run `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run sitemap_discovery.py <url> --json`; require a
+- XML sitemap: run `hermes seo run sitemap_discovery.py <url> --json`; require a
   valid entry in `found`, and report stale or unsafe robots.txt declarations
   separately from working fallback locations
 - Noindex tags: intentional vs accidental
@@ -128,7 +125,7 @@ Allow: /
 - Mobile-first indexing: Googlebot Smartphone is the primary crawler (rollout completed 2024). A mobile version is **not strictly required** (Google says "very strongly recommended"), sites that don't work on mobile can still be indexed, but the real risk is **content/parity loss**, not hard exclusion.
 - **Mobile/desktop content parity** (highest-value mobile check): equivalent primary content, matching robots meta tags, matching titles/descriptions, equivalent structured data, crawlable resources; avoid lazy-loading primary content that requires user interaction.
 - **Intrusive interstitials / ad density**: flag full-page interstitials, standalone consent-redirect pages, persistent blocking dialogs, and excessive/distracting ad density (a named page-experience aspect). Acceptable: small banners, standard CMS/legal dialogs.
-- **"Read more" deep links**: keep key content **immediately visible on load** (not behind tabs/accordions), don't hijack scroll on load, and preserve URL hash fragments, content hidden behind expandable sections is less likely to qualify.
+- **"read_file more" deep links**: keep key content **immediately visible on load** (not behind tabs/accordions), don't hijack scroll on load, and preserve URL hash fragments, content hidden behind expandable sections is less likely to qualify.
 
 > **Page experience is guidance, not a single ranking system.** Only **Core Web Vitals** feeds ranking directly; **HTTPS** is a confirmed but lightweight signal (Google called it very lightweight when it was announced in 2014). Relevance can still win even when page experience is sub-par, so don't over-weight security headers. Note: the standalone **Page Experience report was removed** from Search Console (monitor via the Core Web Vitals + HTTPS reports).
 
@@ -146,7 +143,7 @@ Allow: /
 - See seo-schema skill for full analysis
 
 ### 8. JavaScript Rendering
-- Method: `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agentic_check.py <url> --json` reports visible words in the raw HTML (`server-rendered`); compare with `render_page.py <url> --mode always --json` when Chromium is available. Without Chromium, report the raw-HTML result and say rendered content was not compared.
+- Method: `hermes seo run agentic_check.py <url> --json` reports visible words in the raw HTML (`server-rendered`); compare with `render_page.py <url> --mode always --json` when Chromium is available. Without Chromium, report the raw-HTML result and say rendered content was not compared.
 - Check if content visible in initial HTML vs requires JS
 - Identify client-side rendered (CSR) vs server-side rendered (SSR)
 - Flag SPA frameworks (React, Vue, Angular) that may cause indexing issues
@@ -183,7 +180,7 @@ Google updated its JavaScript SEO documentation in December 2025 with critical c
 
 ## Agent-Friendly Pages & Agentic Browsing
 
-Agent readiness has its own sub-skill: `/seo agentic <url>` (`seo-agentic`).
+Agent readiness has its own sub-skill: `hermes-seo:seo-agentic <url>` (`seo-agentic`).
 It owns the Lighthouse **Agentic Browsing** category (a fraction, X of N, not
 a 0-100 score), the accessibility tree for agents, AI agent access policy,
 llms.txt, Markdown delivery, ai-catalog.json, `/.well-known` discovery files,
@@ -195,7 +192,7 @@ to `seo-agentic` for the rest:
 - A 5xx robots.txt, which compliant crawlers read as "disallow everything".
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run agent_ux_check.py https://example.com --json
+hermes seo run agent_ux_check.py https://example.com --json
 ```
 
 The Agent-UX 0-100 score above is a local heuristic. Keep it distinct from the
@@ -236,7 +233,7 @@ If DataForSEO MCP tools are available, use `on_page_instant_pages` for real page
 
 ## Google API Integration (Optional)
 
-If Google API credentials are configured, use `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run pagespeed_check.py <url> --json` for real PSI + CrUX field data (replaces lab-only CWV estimates), `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run crux_history.py <url> --form-factor PHONE --json` for 25-week CWV trends (use PHONE: the all-devices view can hide a mobile failure), and `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run gsc_inspect.py <url> --json` for real indexation status per URL.
+If `GOOGLE_API_KEY` is available and the user approves the requests, use `hermes_seo_run {"script":"pagespeed_check.py","args":["<url>","--json"]}` for real PSI + CrUX field data (replaces lab-only CWV estimates) and `hermes_seo_run {"script":"crux_history.py","args":["<url>","--form-factor","PHONE","--json"]}` for 25-week CWV trends. GSC URL Inspection remains disabled because this catalog build has no approved Google OAuth route.
 
 ## Auditing a Local or Private Host
 
@@ -246,7 +243,7 @@ To audit a pre-deployment host, the operator names it in `CLAUDE_SEO_LOCAL_TARGE
 
 ```bash
 CLAUDE_SEO_LOCAL_TARGETS="localhost:3000,127.0.0.1:8080,100.101.102.103" \
-  "${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run fetch_page.py http://localhost:3000/
+  hermes seo run fetch_page.py http://localhost:3000/
 ```
 
 What it does and does not cover:

@@ -1,100 +1,17 @@
-# Banana Image Generation Extension for Claude SEO
+# Banana image generation extension
 
-Generate production-ready SEO images using AI: OG/social previews, blog heroes,
-product photography, infographics, and more. Powered by Google Gemini via the
-banana Creative Director pipeline.
+This extension preserves SEO-oriented image prompts and helper scripts from the source project. It does not install a skill, agent, or MCP server and does not configure Claude Code. The optional generation workflow needs a compatible image-generation MCP provider and `GOOGLE_AI_API_KEY` stored in the active Hermes profile. The parent native tool injects that secret for the selected script; the helpers never accept it as a command argument. Image generation can incur cost; review current provider pricing before use.
 
-## Prerequisites
-
-> This extension wraps [Claude Banana](https://github.com/AgriciDaniel/banana-claude)
-> for SEO-specific use cases. Install the standalone skill for general-purpose image generation.
-
-- **Claude SEO** installed (`~/.claude/skills/seo/`)
-- **Node.js 20+** with npx
-- **Google AI API key** (free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey))
-- **ImageMagick** (optional, for post-processing)
-
-## Installation
+Use Hermes `skills_list` and `skill_view` to discover the registered image workflow. Local, credential-free planning helpers can run through the CLI. Credentialed helpers must run through the native `hermes_seo_run` tool so the active profile secret is scoped to that process, for example:
 
 ```bash
-./extensions/banana/install.sh
+hermes seo run --extension banana batch.py --csv requests.csv
 ```
 
-The installer will:
-1. Verify Claude SEO is installed
-2. Prompt for your Google AI API key (if nanobanana-mcp not already configured)
-3. Install the `seo-image-gen` skill and agent
-4. Configure the MCP server in `~/.claude.json`
-
-## Commands
-
-| Command | What it does |
-|---------|-------------|
-| `/seo image-gen og <description>` | OG/social preview image (1200x630 feel) |
-| `/seo image-gen hero <description>` | Blog hero image (widescreen, dramatic) |
-| `/seo image-gen product <description>` | Product photography (clean, white BG) |
-| `/seo image-gen infographic <description>` | Infographic visual (vertical, data-heavy) |
-| `/seo image-gen custom <description>` | Custom with full Creative Director pipeline |
-| `/seo image-gen batch <description> [N]` | Generate N variations (default: 3) |
-
-CSV batch planning helper:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run --extension banana batch.py --csv requests.csv --model "$NANOBANANA_MODEL"
+```json
+{"script":"validate_setup.py","extension":"banana","args":["--model","<verified-model-id>"]}
 ```
 
-## Use Case Defaults
+The helper scripts can support planning and validation; they do not establish provider connectivity. Image generation should happen only after the user approves the specific generation/cost.
 
-| Use Case | Aspect Ratio | Resolution | Domain Mode | Pricing |
-|----------|-------------|------------|-------------|---------|
-| OG/Social Preview | 16:9 | 1K | Product/UI | Verify current pricing |
-| Blog Hero | 16:9 | 2K | Cinema/Editorial | Verify current pricing |
-| Product Photo | 4:3 | 2K | Product | Verify current pricing |
-| Infographic | 2:3 | 4K | Infographic | Verify current pricing |
-| Social Square | 1:1 | 1K | UI/Web | Verify current pricing |
-| Favicon/Icon | 1:1 | 512 | Logo | Verify current pricing |
-
-## How It Works
-
-Claude acts as a **Creative Director**. It never passes raw text to the API.
-Instead, it analyzes your intent, selects the optimal domain mode, and constructs
-an optimized prompt using a proven 6-component Reasoning Brief system:
-
-1. **Subject** (30%):Physical specificity and micro-details
-2. **Style** (25%):Camera specs, film stock, brand references
-3. **Context** (15%):Location, time, weather, supporting elements
-4. **Action** (10%):Pose, gesture, movement, state
-5. **Composition** (10%):Shot type, framing, focal length
-6. **Lighting** (10%):Direction, quality, color temperature
-
-## Post-Generation SEO Checklist
-
-After every generation, Claude provides:
-- Alt text suggestion (keyword-rich, descriptive)
-- SEO-friendly file naming convention
-- WebP conversion command
-- ImageObject schema snippet
-- OG meta tag markup (for social previews)
-
-## Audit Integration
-
-During `/seo audit`, the extension optionally spawns an image analysis agent that:
-- Audits existing OG/social images across the site
-- Identifies missing or low-quality images
-- Creates a prioritized generation plan with prompt suggestions
-- Estimates total cost for the generation plan
-
-The agent never auto-generates images. It produces a plan for your review.
-
-## Uninstallation
-
-```bash
-./extensions/banana/uninstall.sh
-```
-
-This removes the skill and agent. If you also use [Claude Banana](https://github.com/AgriciDaniel/banana-claude),
-the MCP server config is preserved.
-
-## Troubleshooting
-
-See [docs/BANANA-SETUP.md](docs/BANANA-SETUP.md) for detailed setup instructions
-and common issues.
+See [setup notes](docs/BANANA-SETUP.md) and the retained references for prompt structure, presets, and post-processing. Historical source references to Claude Banana identify the original project, not a runtime dependency of this Hermes fork.

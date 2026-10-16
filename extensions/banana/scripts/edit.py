@@ -6,7 +6,10 @@ Uses only Python stdlib (no pip dependencies).
 
 Usage:
     edit.py --image path/to/image.png --prompt "remove the background"
-            [--model MODEL] [--api-key KEY]
+            [--model MODEL]
+
+The Google API key must be injected as ``GOOGLE_AI_API_KEY`` by the
+Hermes profile-scoped secret bridge. It is never accepted on the command line.
 """
 
 import argparse
@@ -144,7 +147,6 @@ def main():
     parser.add_argument("--image", required=True, help="Path to input image")
     parser.add_argument("--prompt", required=True, help="Edit instruction")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Model ID (or set NANOBANANA_MODEL env)")
-    parser.add_argument("--api-key", default=None, help="Google AI API key (or set GOOGLE_AI_API_KEY env)")
 
     args = parser.parse_args()
 
@@ -152,9 +154,9 @@ def main():
         print(json.dumps({"error": True, "message": "No model. Set NANOBANANA_MODEL or pass --model."}))
         sys.exit(1)
 
-    api_key = args.api_key or os.environ.get("GOOGLE_AI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    api_key = os.environ.get("GOOGLE_AI_API_KEY")
     if not api_key:
-        print(json.dumps({"error": True, "message": "No API key. Set GOOGLE_AI_API_KEY env or pass --api-key"}))
+        print(json.dumps({"error": True, "message": "No API key. Configure GOOGLE_AI_API_KEY in the active Hermes profile."}))
         sys.exit(1)
 
     result = edit_image(

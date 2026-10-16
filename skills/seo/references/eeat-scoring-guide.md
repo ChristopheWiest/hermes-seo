@@ -1,6 +1,6 @@
 # E-E-A-T Scoring Guide and Improvement Recommendations
 
-> Split from `eeat-framework.md`. Read that file for the criteria and weights; this one maps totals to ratings and actions.
+> Split from `eeat-framework.md`. read_file that file for the criteria and weights; this one maps totals to ratings and actions.
 
 ## Overall Scoring Guide
 

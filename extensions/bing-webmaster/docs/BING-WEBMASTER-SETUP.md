@@ -1,61 +1,11 @@
-# Bing Webmaster Tools + IndexNow extension setup
+# Bing Webmaster Tools and IndexNow
 
-## What this gives you
+The fork retains direct scripts for Bing Webmaster reporting and IndexNow submission. Ask Hermes to invoke credentialed scripts through the native tool:
 
-1. **Bing Webmaster Tools API**: inbound links, crawl stats, search
-   keywords, and competitor link comparison via
-   `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run bing_webmaster.py` (already shipped with claude-seo).
-2. **IndexNow URL submission** for Amazon, Bing, Naver, Seznam.cz,
-   Yandex, and Yep via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run indexnow_submit.py`.
-3. A unified `seo-bing` skill that routes the right command at the
-   right script.
-
-## Install
-
-```bash
-./extensions/bing-webmaster/install.sh
-.\extensions\bing-webmaster\install.ps1
+```json
+{"script":"indexnow_submit.py","args":["--help"]}
 ```
 
-You'll be prompted for:
+Store `BING_WEBMASTER_API_KEY` and optional `INDEXNOW_KEY` as secrets in the active Hermes profile, following the current Microsoft and IndexNow documentation. The parent native tool injects only the secrets needed by the selected script. `INDEXNOW_KEY_LOCATION` is nonsecret runtime configuration; the host key itself must never be passed as a command argument. The former extension installers edited Claude settings and are not supported setup flows here. The `seo-bing` workflow is available only if registered by the plugin and its required configuration is present.
 
-- Bing Webmaster Tools API key (https://www.bing.com/webmasters/api)
-- IndexNow host key (any random 32+ char string)
-- IndexNow keyLocation URL (must serve the key file at that URL)
-
-Both groups can be left blank if you only want one. The installer
-writes only the env vars you provide.
-
-## IndexNow setup checklist
-
-1. Generate a key: `openssl rand -hex 32`
-2. Save the key to a file at the **root** of your site, named `<key>.txt`,
-   served at `https://example.com/<key>.txt`. The file body is the key.
-3. Run:
-   ```
-   /seo bing verify-indexnow
-   ```
-   The verifier fetches your keyLocation URL and confirms the body
-   matches the key, the #1 onboarding mistake.
-
-## Microsoft Copilot citation
-
-Microsoft Copilot pulls citations from the Bing index. Pages that
-aren't in Bing aren't citable. IndexNow notifies participating
-engines about changed URLs and can speed discovery, but it does not
-guarantee indexing speed.
-
-## Uninstall
-
-```bash
-./extensions/bing-webmaster/uninstall.sh
-```
-
-PowerShell manual removal:
-```powershell
-Remove-Item -Recurse -Force "$HOME\.claude\skills\seo-bing"
-notepad "$HOME\.claude\settings.json"
-```
-
-In `settings.json`, remove `BING_WEBMASTER_API_KEY`, `INDEXNOW_KEY`, and
-`INDEXNOW_KEY_LOCATION` from the top-level `env` object.
+IndexNow requires a host key and a publicly served key file at the advertised key URL. Verify the key setup before submitting URLs. Submission changes public indexing state, so obtain approval for the specific submission. Bing Webmaster data also requires verified site ownership and API access. This fork has not made live Bing calls.

@@ -1,176 +1,95 @@
-# Installation Guide
+# Installation
 
-## Prerequisites
+Hermes SEO is a local Hermes plugin. This fork does not publish a catalog or release; install from a reviewed checkout.
 
-- **Python 3.10+** with pip (3.10 reaches end of life in October 2026; prefer 3.11 or newer)
-- **Git** for cloning the repository
-- **Claude Code CLI** installed and configured
+## Requirements
 
-Optional:
-- **Playwright Chromium** - install.sh attempts this automatically; failure is non-fatal; needed only for SPA rendering and screenshots
+- Hermes with plugin support
+- Python 3.10+ and `venv` support (the managed runtime installs pinned dependencies)
+- Git to obtain or update the checkout
 
-## Quick Install
+Playwright/Chromium is optional and is provisioned by setup for workflows that need browser rendering. Setup downloads packages and a browser and can use substantial disk space.
 
-### Plugin Install (Claude Code 1.0.33+)
-
-The recommended path. Inside Claude Code:
-
-```
-/plugin marketplace add AgriciDaniel/claude-seo
-/plugin install claude-seo@agricidaniel-claude-seo
-/seo setup
-```
-
-Plugin installation does not run package managers. `/seo setup` is an explicit,
-one-time provisioning step that writes the virtual environment and browser only
-to Claude's persistent plugin data. Use `/seo doctor` for a read-only check.
-
-### Manual Install (Unix, macOS, Linux)
+## Install from a checkout
 
 ```bash
-git clone --depth 1 https://github.com/AgriciDaniel/claude-seo.git
-bash claude-seo/install.sh
+mkdir -p "${HERMES_HOME:-$HOME/.hermes}/plugins"
+cp -a /path/to/hermes-seo "${HERMES_HOME:-$HOME/.hermes}/plugins/hermes-seo"
+hermes plugins enable hermes-seo
+hermes plugins doctor hermes-seo --ci
 ```
 
-Review-then-run alternative:
+Initialize the isolated runtime only when needed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AgriciDaniel/claude-seo/main/install.sh > install.sh
-cat install.sh        # review
-bash install.sh       # run when satisfied
-rm install.sh
+hermes seo setup
+hermes seo doctor --json
 ```
 
-### Manual Install (Windows, PowerShell)
+`hermes seo setup` installs pinned Python dependencies and optional Chromium into Hermes plugin data storage. `hermes seo doctor --json` checks readiness without changing the system. Use `hermes seo run <script.py> [args...]` for offline utilities. Credentialed utilities must use the native `hermes_seo_run` tool so the selected profile-vault values are scoped to one child process.
 
-```powershell
-git clone --depth 1 https://github.com/AgriciDaniel/claude-seo.git
-powershell -ExecutionPolicy Bypass -File claude-seo\install.ps1
+## Docker sandbox
+
+Keep the reviewed bundle immutable and give its runtime a separate persistent data directory. Configure the container with these mounts (replace the host source path with the reviewed checkout):
+
+```yaml
+volumes:
+  - /host/reviewed/hermes-seo:/opt/hermes-seo:ro
+  - /host/reviewed/hermes-seo/scripts/hermes:/usr/local/bin/hermes:ro
+  - hermes-seo-data:/var/lib/hermes-seo:rw
+environment:
+  HERMES_SEO_ROOT: /opt/hermes-seo
+  HERMES_SEO_DATA_DIR: /var/lib/hermes-seo
 ```
 
-The Windows path uses `git clone` rather than `irm | iex` because Claude Code's own security guardrails flag piped remote-script execution. Inspect `install.ps1` before running.
+Do not mount host credentials, the host Hermes profile, SSH configuration, or cloud-provider configuration into this container. The data volume is the only location Hermes SEO needs to write. Runtime setup requires outbound access to the configured Python package source and, unless `--skip-browser` is used, the Chromium download source.
 
-## Manual Installation
-
-1. **Clone the repository**
+In the container terminal, bind the runtime to those paths before setup, diagnosis, or execution:
 
 ```bash
-git clone https://github.com/AgriciDaniel/claude-seo.git
-cd claude-seo
+export HERMES_SEO_ROOT=/opt/hermes-seo
+export HERMES_SEO_DATA_DIR=/var/lib/hermes-seo
+cd "$HERMES_SEO_ROOT"
 ```
 
-2. **Run the installer**
+The mounted `scripts/hermes` compatibility command accepts only `hermes seo` and forwards it to the bundle launcher. It does not expose the host Hermes CLI. Use it for setup, diagnosis, and offline utilities:
 
 ```bash
-./install.sh
+hermes seo setup
+hermes seo doctor --json
+hermes seo run portability_check.py --json
 ```
 
-3. **Verify the managed runtime**
-
-The installer delegates dependency and Chromium provisioning to the same runtime
-used by every skill. It creates `~/.claude/skills/seo/.venv/` and never falls
-back to global or user package installation.
+The bundled launcher remains available directly if the compatibility command is not mounted:
 
 ```bash
-~/.claude/skills/seo/scripts/claude-seo doctor
+./scripts/hermes-seo setup
+./scripts/hermes-seo doctor --json
+./scripts/hermes-seo run portability_check.py --json
 ```
 
-If core setup failed, rerun the inspected installer. If only Chromium failed,
-the installer reports a degraded result and raw-fetch analysis remains available.
+The launcher selects an available Python 3.10+ interpreter and then dispatches through the managed environment under `/var/lib/hermes-seo`. `scripts/hermes-seo` is a shell launcher, so do not pass it to `python3`; `python3 scripts/runtime.py ...` is the lower-level equivalent when a shell cannot execute the launcher.
 
-## Installation Paths
+Credentialed calls are different: `hermes_seo_run` executes from the Hermes
+host plugin process and does not inherit the Docker terminal's filesystem or
+network isolation. Script arguments can reference paths visible to that host
+process. Review file arguments and ask for approval before paid, external, or
+mutating operations; the tool itself does not enforce that approval policy.
 
-The installer copies files to:
+## Use the skills
 
-| Component | Path |
-|-----------|------|
-| Main skill | `~/.claude/skills/seo/` |
-| Sub-skills | `~/.claude/skills/seo-*/` |
-| Subagents | `~/.claude/agents/seo-*.md` |
-| Runtime launcher | `~/.claude/skills/seo/scripts/claude-seo` |
-| Isolated Python | `~/.claude/skills/seo/.venv/` |
+Discover skills with Hermes `skills_list` and load them with `skill_view`. Ask Hermes to perform an audit or analysis, or load `hermes-seo:seo` as the router. Skills are prompt workflows; they are not shell commands. Provider-backed workflows require a separately configured compatible Hermes MCP server and account.
 
-## Verify Installation
+Google Search Console, GA4, Google Ads, and Indexing API OAuth flows stay disabled until Hermes provides a profile-scoped Google authorization route. The native tool supports these active-profile vault names: `GOOGLE_API_KEY`, `MOZ_API_KEY`, `BING_WEBMASTER_API_KEY`, `KEYWORDSEVERYWHERE_API_KEY`, `MATOMO_API_TOKEN` or `MATOMO_TOKEN`, `MATOMO_URL`, `MATOMO_SITE_ID` or `MATOMO_IDSITE`, `HERMES_SEO_LOCAL_TARGETS`, `DATAFORSEO_USERNAME`, `DATAFORSEO_PASSWORD`, `INDEXNOW_KEY`, and Banana's `GOOGLE_AI_API_KEY`. IndexNow's key-location URL is nonsecret and remains a normal argument. Do not put secret values in the checkout, catalog entry, or tool arguments.
 
-1. Start Claude Code:
+## Update
+
+Review the new checkout, replace the local plugin copy, then run:
 
 ```bash
-claude
+hermes plugins doctor hermes-seo --ci
 ```
 
-2. Check that the skill is loaded:
+## Remove
 
-```
-/seo
-```
-
-You should see a help message or prompt for a URL.
-
-## Uninstallation
-
-If installed as a plugin:
-
-```
-/plugin uninstall claude-seo@agricidaniel-claude-seo
-/plugin marketplace remove AgriciDaniel/claude-seo
-```
-
-If installed manually, run the uninstaller from a fresh clone:
-
-```bash
-git clone --depth 1 https://github.com/AgriciDaniel/claude-seo.git
-bash claude-seo/uninstall.sh
-```
-
-`uninstall.sh` removes all installed sub-skills, sub-agents, and the plugin's MCP entries from `~/.claude/settings.json`. Do not maintain a hand-coded `rm` list. The shipped uninstaller is the canonical source.
-
-## Upgrading
-
-To upgrade to the latest version:
-
-Caution: Prefer downloading, inspecting, then running remote scripts; the pipe-to-shell form below is the less-safe convenience option.
-
-```bash
-# Uninstall current version
-curl -fsSL https://raw.githubusercontent.com/AgriciDaniel/claude-seo/main/uninstall.sh | bash
-
-# Install new version
-curl -fsSL https://raw.githubusercontent.com/AgriciDaniel/claude-seo/main/install.sh | bash
-```
-
-## Troubleshooting
-
-### "Skill not found" error
-
-Ensure the skill is installed in the correct location:
-
-```bash
-ls ~/.claude/skills/seo/SKILL.md
-```
-
-If the file doesn't exist, re-run the installer.
-
-### Python dependency errors
-
-Run the managed setup again:
-
-```bash
-~/.claude/skills/seo/scripts/claude-seo setup
-```
-
-### Playwright screenshot errors
-
-Run the managed setup again and inspect the result:
-
-```bash
-~/.claude/skills/seo/scripts/claude-seo setup
-~/.claude/skills/seo/scripts/claude-seo doctor
-```
-
-### Permission errors on Unix
-
-Make sure scripts are executable:
-
-```bash
-chmod +x ~/.claude/skills/seo/scripts/*.py
-```
+Disable the plugin with `hermes plugins disable hermes-seo`, then remove its directory under `${HERMES_HOME:-$HOME/.hermes}/plugins/hermes-seo` if desired. Runtime data is held in Hermes plugin data storage; inspect Hermes' configured data location before removing it.

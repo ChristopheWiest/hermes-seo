@@ -90,30 +90,3 @@ def test_check_one_clean_skill_returns_no_findings(tmp_path) -> None:
     )
     findings = pc.check_one(ok)
     assert findings == []
-
-
-# ---------------------------------------------------------------------------
-# AGENTS.md multi-platform instructions
-# ---------------------------------------------------------------------------
-
-
-def test_agents_md_covers_all_target_platforms() -> None:
-    text = (_REPO / "AGENTS.md").read_text(encoding="utf-8")
-    for harness in ("Cursor", "Gemini CLI", "Codex", "Cline", "Aider",
-                    "Antigravity"):
-        assert harness in text, f"AGENTS.md must mention {harness}"
-
-
-def test_agents_md_documents_portability_check() -> None:
-    text = (_REPO / "AGENTS.md").read_text(encoding="utf-8")
-    assert "portability_check.py" in text
-
-
-def test_agents_md_tool_mapping_table_includes_codex_cline_aider() -> None:
-    text = (_REPO / "AGENTS.md").read_text(encoding="utf-8")
-    # The tool-name compatibility table is a single block; check the
-    # row labels appear.
-    for tool in ("Read", "Write", "Edit", "Bash", "WebFetch"):
-        assert tool in text, f"AGENTS.md mapping table must include {tool}"
-    for col in ("Codex", "Cline", "Aider"):
-        assert col in text, f"AGENTS.md mapping table must include {col} column"

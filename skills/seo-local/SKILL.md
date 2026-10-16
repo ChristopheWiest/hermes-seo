@@ -1,16 +1,8 @@
 ---
 name: seo-local
-description: >
-  Audit local SEO, including Google Business Profile, NAP consistency,
-  citations, reviews, local schema, location pages, and multi-location
-  structure.
-user-invocable: true
-argument-hint: "[url]"
+description: "Review local SEO, business details, and reputation."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Local SEO Analysis (March 2026)
@@ -57,7 +49,7 @@ Detect from page signals before analysis. This determines which checks apply.
 
 ## Industry Vertical Detection
 
-Detect from page signals and GBP category patterns. Routes to industry-specific checks from `../seo/references/local-schema-types.md`.
+Detect from page signals and GBP category patterns. Routes to industry-specific checks from `skill_view(name="hermes-seo:seo", file_path="references/local-schema-types.md")`.
 
 | Vertical | Detection Signals |
 |----------|------------------|
@@ -154,14 +146,14 @@ Citations declining for traditional pack rankings but **3 of top 5 AI visibility
   2. LocalBusiness JSON-LD schema
   3. Any visible GBP data
   - Flag any discrepancies between these three sources
-- Citation presence on Tier 1 directories (check via WebFetch or site: search patterns):
+- Citation presence on Tier 1 directories (check via web_extract or site: search patterns):
   - Google Business Profile signals on page
   - Yelp: `site:yelp.com "Business Name"`
   - BBB: `site:bbb.org "Business Name"`
   - Facebook business page references
 - **Apple Maps / Apple business listings** awareness: claim and maintain Apple listings; treat Apple Business unified-platform launch/rename claims as TechRadar-sourced and verify against Apple primary before asserting.
 - Bing Places awareness (powers ChatGPT, Copilot, Alexa -- recommend claiming and optimizing)
-- Industry-specific directory recommendations: load `../seo/references/local-schema-types.md` for per-vertical citation sources
+- Industry-specific directory recommendations: load `skill_view(name="hermes-seo:seo", file_path="references/local-schema-types.md")` for per-vertical citation sources
 - Data aggregator awareness: Data Axle, Foursquare, Neustar/TransUnion (recommend submission for downstream distribution)
 - Regional Search units: in the EEA, Google's aggregator and supplier units also cover local business queries since 2026-09-18; Türkiye has separate places-site features (see `seo-hreflang` section 5c); note this for businesses serving those markets
 
@@ -178,14 +170,14 @@ Schema is NOT a direct ranking factor (John Mueller confirmed). But enables rich
 - LocalBusiness schema presence (extract JSON-LD blocks)
 - Required properties: `name`, `address` with PostalAddress sub-properties
 - Recommended properties: `geo` (minimum 5 decimal places, Confirmed), `openingHoursSpecification`, `telephone`, `url`, `priceRange` (<100 chars), `image`, `aggregateRating`
-- **Correct subtype for industry** -- load `../seo/references/local-schema-types.md`:
+- **Correct subtype for industry** -- load `skill_view(name="hermes-seo:seo", file_path="references/local-schema-types.md")`:
   - Restaurant using `Restaurant` not generic `LocalBusiness`
   - Legal using `LegalService` not deprecated `Attorney`
   - Auto dealer using `AutoDealer` not deprecated `VehicleListing`
   - Healthcare using `MedicalClinic`/`Hospital`/`Dentist` not generic `MedicalBusiness`
 - SAB-specific: `areaServed` with named cities (recommended, not in Google's official list but Schema.org supported)
 - Multi-location: each location page has own LocalBusiness with unique `@id`, linked via `branchOf` to Organization on homepage
-- Industry-specific schema patterns (per `../seo/references/local-schema-types.md`):
+- Industry-specific schema patterns (per `skill_view(name="hermes-seo:seo", file_path="references/local-schema-types.md")`):
   - Restaurant: Menu + MenuSection + MenuItem + ReserveAction (note: Reservation/Order actions are not Google-supported rich results; value is machine-readable business data)
   - Healthcare: Physician (Person) + MedicalSpecialty + sameAs to NPI
   - Legal: LegalService + Person + Service (practice areas)
@@ -222,7 +214,7 @@ Links declining for local pack but remain **~26% of local organic ranking** (Whi
 
 ## AI Search Impact on Local
 
-**Do not duplicate seo-geo analysis.** Provide local-specific AI context and recommend `/seo geo <url>` for full analysis.
+**Do not duplicate seo-geo analysis.** Provide local-specific AI context and recommend `hermes-seo:seo-geo <url>` for full analysis.
 
 Key local AI facts:
 - AI Overviews appeared on 68% of local searches on average in Whitespark's 2025 sample (540 service-industry queries, 3 metros); broad keyword panels report far lower rates (seoClarity: ~0.14% of local keywords in March 2025), so coverage depends on the query set
@@ -232,17 +224,17 @@ Key local AI facts:
 - Bing Places is critical: powers ChatGPT, Copilot, Alexa
 - Third-party observed local AI interface changes (mobile US) may show only 1-2 businesses, 32% fewer shown (Sterling Sky)
 
-**Recommendation**: Run `/seo geo <url>` for comprehensive AI search visibility analysis including citability scoring, llms.txt check, and brand mention audit.
+**Recommendation**: Run `hermes-seo:seo-geo <url>` for comprehensive AI search visibility analysis including citability scoring, llms.txt check, and brand mention audit.
 
 ---
 
 ## Reference Files
 
 Load on-demand as needed:
-- `../seo/references/local-seo-signals.md`: Ranking factors, review benchmarks, citation tiers, GBP feature status, algorithm updates
-- `../seo/references/local-search-behavior.md`: Voice search, AI search impact on local, Local Pack structure, proximity
-- `../seo/references/local-schema-types.md`: LocalBusiness subtypes by industry, schema patterns, citation sources per vertical
-- `../seo/references/local-schema-multilocation.md`: Multi-location schema pattern, deprecated local schema
+- `skill_view(name="hermes-seo:seo", file_path="references/local-seo-signals.md")`: Ranking factors, review benchmarks, citation tiers, GBP feature status, algorithm updates
+- `skill_view(name="hermes-seo:seo", file_path="references/local-search-behavior.md")`: Voice search, AI search impact on local, Local Pack structure, proximity
+- `skill_view(name="hermes-seo:seo", file_path="references/local-schema-types.md")`: LocalBusiness subtypes by industry, schema patterns, citation sources per vertical
+- `skill_view(name="hermes-seo:seo", file_path="references/local-schema-multilocation.md")`: Multi-location schema pattern, deprecated local schema
 
 ---
 
@@ -311,4 +303,4 @@ If DataForSEO MCP tools are available, use `business_data_business_listings_sear
 
 ## FLOW Framework Integration
 
-For prompt-guided local optimization, use `/seo flow local <url>`, FLOW's 11 local-stage prompts cover GBP optimization, meta descriptions, title tags, and structured local audit workflows.
+For prompt-guided local optimization, use `hermes-seo:seo-flow local <url>`, FLOW's 11 local-stage prompts cover GBP optimization, meta descriptions, title tags, and structured local audit workflows.

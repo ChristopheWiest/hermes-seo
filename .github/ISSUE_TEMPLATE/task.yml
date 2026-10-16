@@ -36,11 +36,11 @@ body:
       required: true
 
   - type: textarea
-    id: context_for_claude
+    id: context_for_hermes
     attributes:
-      label: Claude Code Context
+      label: Hermes Context
       description: >
-        Background that Claude Code should read before starting work.
+        Background that Hermes should read before starting work.
         List relevant files, known patterns, prior decisions, or constraints.
       placeholder: |
         - Related files: skills/seo-foo/SKILL.md, scripts/bar.py

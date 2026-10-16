@@ -1,14 +1,8 @@
 ---
 name: seo-backlinks
-description: "Analyze a site's backlink profile, anchors, toxic signals, competitors, gaps, and disavow candidates. Use only when links or referring domains are the requested focus."
-user-invocable: true
-argument-hint: "<url>"
+description: "Analyze backlinks, referring domains, and link quality."
+author: Daniel Agrici
 license: MIT
-compatibility: "Free: Common Crawl + verify always available. Optional: Moz API, Bing Webmaster, Keywords Everywhere (free signup). Premium: DataForSEO extension."
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Backlink Profile Analysis
@@ -18,28 +12,28 @@ metadata:
 Before analysis, detect available data sources:
 
 1. **DataForSEO MCP** (premium): Check if `backlinks_summary` tool is available
-2. **Moz API** (free signup): `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check moz --json`
-3. **Bing Webmaster** (free signup): `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check bing --json`
-4. **Keywords Everywhere** (free signup; domain rank plus referring-domain count): `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check keywordseverywhere --json`
+2. **Moz API** (free signup): `hermes_seo_run {"script":"backlinks_auth.py","args":["--check","moz","--json"]}`
+3. **Bing Webmaster** (free signup): `hermes_seo_run {"script":"backlinks_auth.py","args":["--check","bing","--json"]}`
+4. **Keywords Everywhere** (free signup; domain rank plus referring-domain count): `hermes_seo_run {"script":"backlinks_auth.py","args":["--check","keywordseverywhere","--json"]}`
 5. **Common Crawl** (always available): Domain-level graph with PageRank
 6. **Verification Crawler** (always available): Checks if known backlinks still exist
 
-Run `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run backlinks_auth.py --check --json` to detect all sources at once.
+Run `hermes_seo_run {"script":"backlinks_auth.py","args":["--check","--json"]}` to detect all sources at once.
 
 If no sources are configured beyond the always-available tier:
 - Still produce a report using Common Crawl domain metrics
-- Suggest: "Run `/seo backlinks setup` to add free Moz and Bing API keys for richer data"
+- Suggest: "Run `hermes-seo:seo-backlinks setup` to add free Moz and Bing API keys for richer data"
 
 ## Quick Reference
 
 | Command | Purpose |
 |---------|---------|
-| `/seo backlinks <url>` | Full backlink profile analysis (uses all available sources) |
-| `/seo backlinks gap <url1> <url2>` | Competitor backlink gap analysis |
-| `/seo backlinks toxic <url>` | Toxic link detection and disavow recommendations |
-| `/seo backlinks new <url>` | New and lost backlinks (DataForSEO only) |
-| `/seo backlinks verify <url> --links <file>` | Verify known backlinks still exist |
-| `/seo backlinks setup` | Show setup instructions for free backlink APIs |
+| `hermes-seo:seo-backlinks <url>` | Full backlink profile analysis (uses all available sources) |
+| `hermes-seo:seo-backlinks gap <url1> <url2>` | Competitor backlink gap analysis |
+| `hermes-seo:seo-backlinks toxic <url>` | Toxic link detection and disavow recommendations |
+| `hermes-seo:seo-backlinks new <url>` | New and lost backlinks (DataForSEO only) |
+| `hermes-seo:seo-backlinks verify <url> --links <file>` | Verify known backlinks still exist |
+| `hermes-seo:seo-backlinks setup` | Show setup instructions for free backlink APIs |
 
 ## Analysis Framework
 
@@ -49,11 +43,11 @@ Produce all 7 sections below. Each section lists data sources in preference orde
 
 **DataForSEO:** `backlinks_summary` → total backlinks, referring domains, domain rank, follow ratio, trend.
 
-**Moz API:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py metrics <url> --json` → Domain Authority, Page Authority, Spam Score, linking root domains, external links.
+**Moz API:** `hermes_seo_run {"script":"moz_api.py","args":["metrics","<url>","--json"]}` → Domain Authority, Page Authority, Spam Score, linking root domains, external links.
 
-**Keywords Everywhere:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run keywordseverywhere_api.py rank <domain> --json` → 0-10 Open PageRank (`open_page_rank`), a global `rank`, and a referring-domain count (`referring_domains`), per the current API; no anchors or individual links. Use as a fallback when Moz isn't configured; do not use in place of Moz when both are available.
+**Keywords Everywhere:** `hermes_seo_run {"script":"keywordseverywhere_api.py","args":["rank","<domain>","--json"]}` → 0-10 Open PageRank (`open_page_rank`), a global `rank`, and a referring-domain count (`referring_domains`), per the current API; no anchors or individual links. Use as a fallback when Moz isn't configured; do not use in place of Moz when both are available.
 
-**Common Crawl:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run commoncrawl_graph.py <domain> --json` → PageRank, harmonic centrality, and low-confidence rank/presence data.
+**Common Crawl:** `hermes seo run commoncrawl_graph.py <domain> --json` → PageRank, harmonic centrality, and low-confidence rank/presence data.
 
 **Scoring:**
 
@@ -68,9 +62,9 @@ Produce all 7 sections below. Each section lists data sources in preference orde
 
 **DataForSEO:** `backlinks_anchors`
 
-**Moz API:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py anchors <url> --json`
+**Moz API:** `hermes_seo_run {"script":"moz_api.py","args":["anchors","<url>","--json"]}`
 
-**Bing Webmaster:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run bing_webmaster.py links <url> --json` (extract anchor text from link details)
+**Bing Webmaster:** `hermes_seo_run {"script":"bing_webmaster.py","args":["links","<url>","--json"]}` (extract anchor text from link details)
 
 **Healthy distribution benchmarks:**
 
@@ -89,9 +83,9 @@ Flag if exact-match anchors exceed 15% as a review heuristic; it may indicate un
 
 **DataForSEO:** `backlinks_referring_domains`
 
-**Moz API:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py domains <url> --json` → domains with DA scores
+**Moz API:** `hermes_seo_run {"script":"moz_api.py","args":["domains","<url>","--json"]}` → domains with DA scores
 
-**Common Crawl:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run commoncrawl_graph.py <domain> --json` → domain-level rank/presence data, no verified referring-domain counts
+**Common Crawl:** `hermes seo run commoncrawl_graph.py <domain> --json` → domain-level rank/presence data, no verified referring-domain counts
 
 Analyze:
 - **TLD distribution**: .edu, .gov, .org = high authority. Excessive .xyz, .info = low quality
@@ -103,9 +97,9 @@ Analyze:
 
 **DataForSEO:** `backlinks_bulk_spam_score` + toxic patterns from reference
 
-**Moz API:** Raw vendor spam_score from `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py metrics <url> --json` (source-label the value; apply thresholds only if verified against current Moz docs)
+**Moz API:** Raw vendor spam_score from `hermes_seo_run {"script":"moz_api.py","args":["metrics","<url>","--json"]}` (source-label the value; apply thresholds only if verified against current Moz docs)
 
-**Verification Crawler:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run verify_backlinks.py --target <url> --links <file> --json` (verify suspicious links still exist)
+**Verification Crawler:** `hermes seo run verify_backlinks.py --target <url> --links <file> --json` (verify suspicious links still exist)
 
 **High-risk indicators (flag immediately):**
 - Links from known PBN (Private Blog Network) domains
@@ -121,13 +115,13 @@ Analyze:
 - Links from thin content pages (<100 words)
 - Excessive links from a single domain (>50 backlinks from 1 domain)
 
-Load `../seo/references/backlink-quality.md` for the full 30 toxic patterns and disavow criteria.
+Load `skill_view(name="hermes-seo:seo", file_path="references/backlink-quality.md")` for the full 30 toxic patterns and disavow criteria.
 
 ### 5. Top Pages by Backlinks
 
 **DataForSEO:** `backlinks_backlinks` with target type "page"
 
-**Moz API:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py pages <domain> --json`
+**Moz API:** `hermes_seo_run {"script":"moz_api.py","args":["pages","<domain>","--json"]}`
 
 Find:
 - Which pages attract the most backlinks
@@ -139,11 +133,11 @@ Find:
 
 **DataForSEO:** `backlinks_referring_domains` for both domains, then compare
 
-**Bing Webmaster:** `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run bing_webmaster.py compare <url1> <url2> --json`
+**Bing Webmaster:** `hermes_seo_run {"script":"bing_webmaster.py","args":["compare","<url1>","<url2>","--json"]}`
 only when both properties are registered and accessible to the same Bing API
 account. For arbitrary competitors, use DataForSEO, Moz, or Common Crawl.
 
-**Moz API:** Compare DA/PA between domains via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run moz_api.py metrics <url> --json` for each
+**Moz API:** Compare DA/PA between domains via `hermes_seo_run {"script":"moz_api.py","args":["metrics","<url>","--json"]}` for each
 
 Output:
 - Domains linking to competitor but NOT to target = link building opportunities
@@ -155,7 +149,7 @@ Output:
 
 **DataForSEO only:** `backlinks_backlinks` with date filters for 30/60/90 day changes
 
-**Verification Crawler:** For known links, verify current status with `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run verify_backlinks.py --target <url> --links <file> --json`
+**Verification Crawler:** For known links, verify current status with `hermes seo run verify_backlinks.py --target <url> --links <file> --json`
 
 **Note:** Free sources cannot track new/lost links over time. If this section is requested without DataForSEO, inform the user: "Link velocity tracking requires the DataForSEO extension. Free sources provide point-in-time snapshots only."
 
@@ -185,7 +179,7 @@ Calculate a 0-100 score. When mixing sources, apply confidence weighting:
   Backlink Health Score: INSUFFICIENT DATA (X/7 factors scored)
   ```
   Show individual factor scores that ARE available with their source and confidence.
-  Recommend: "Configure Moz API (free) for a scoreable profile. Run `/seo backlinks setup`"
+  Recommend: "Configure Moz API (free) for a scoreable profile. Run `hermes-seo:seo-backlinks setup`"
 
 ### MUST NOT: score what you did not measure
 
@@ -206,7 +200,7 @@ This rule has been stated in this skill before and was violated anyway, so it is
 now checkable. **Before writing any backlink output, run the validator:**
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run validate_backlink_report.py --report <report>.json --json
+hermes seo run validate_backlink_report.py --report <report>.json --json
 ```
 
 Pass the sources you actually collected (`cc_data`, `moz_data`, `bing_data`,
@@ -244,11 +238,11 @@ it passes.
 
 | Error | Cause | Resolution |
 |-------|-------|-----------|
-| No sources configured | No API keys, no DataForSEO | Run `/seo backlinks setup` |
+| No sources configured | No API keys, no DataForSEO | Report the unavailable sources and point to `docs/EXTENSIONS.md` for provider setup boundaries |
 | Moz rate limit | Free tier: 1 req/10s | Wait 10 seconds, retry. Built into script. |
 | Bing site not verified | Site not verified in Bing | Verify at https://www.bing.com/webmasters |
 | CC download timeout | Large graph file, slow connection | Use `--timeout 180` flag |
-| DataForSEO unavailable | Extension not installed | Run `./extensions/dataforseo/install.sh` |
+| DataForSEO unavailable | MCP server is not configured or reachable | Report the limitation and point to `docs/EXTENSIONS.md` for the setup boundary |
 | No backlink data returned | Domain too new or very small | Note: small sites may have <10 backlinks |
 
 **Fallback cascade:**
@@ -260,7 +254,7 @@ it passes.
    rank-only fallback (confidence: 0.60; single metric, no link counts/anchors)
 5. Always: Common Crawl for domain-level metrics (confidence: 0.50)
 6. Always: Verification crawler for known link checks (confidence: 0.95)
-7. Nothing works? → "Run `/seo backlinks setup` to configure free APIs"
+7. Nothing works? → "Run `hermes-seo:seo-backlinks setup` to configure free APIs"
 
 ## Pre-Delivery Review (MANDATORY)
 
@@ -294,10 +288,10 @@ If ANY check fails, fix the finding before presenting. Never present inferred da
 ## Post-Analysis
 
 After completing any backlink analysis command, always offer:
-"Generate a professional PDF report? Use `/seo google report`"
+"Generate a professional PDF report? Use `hermes-seo:seo-google report`"
 
 ## Reference Documentation
 
 Load on demand (do NOT load at startup):
-- `${CLAUDE_PLUGIN_ROOT}/skills/seo/references/backlink-quality.md` -- Detailed toxic link patterns and scoring methodology (shared reference, load when analyzing toxic links or spam scores)
-- `${CLAUDE_PLUGIN_ROOT}/skills/seo/references/free-backlink-sources.md` -- Source comparison, confidence weighting, setup guides (shared reference, load when configuring free backlink APIs)
+- `skill_view(name="hermes-seo:seo", file_path="references/backlink-quality.md")` -- Detailed toxic link patterns and scoring methodology (shared reference, load when analyzing toxic links or spam scores)
+- `skill_view(name="hermes-seo:seo", file_path="references/free-backlink-sources.md")` -- Source comparison, confidence weighting, setup guides (shared reference, load when configuring free backlink APIs)

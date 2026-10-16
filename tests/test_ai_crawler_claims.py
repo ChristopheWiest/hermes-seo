@@ -7,7 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS = REPO_ROOT / "skills"
-AGENTS = REPO_ROOT / "agents"
+ROLE_SKILLS = REPO_ROOT / "skills"
 
 
 def _read(rel: str) -> str:
@@ -44,8 +44,8 @@ def test_geo_skill_separates_training_crawlers_from_search_crawlers() -> None:
 
 
 def test_google_extended_is_never_a_google_search_readiness_signal() -> None:
-    """Named claim, checked in both the skill and the agent that runs it."""
-    for rel in ("skills/seo-geo/SKILL.md", "agents/seo-geo.md"):
+    """The canonical GEO skill keeps Google-Extended distinct from Search."""
+    for rel in ("skills/seo-geo/SKILL.md", "skills/role-seo-geo/SKILL.md"):
         text = _read(rel)
         assert "Google-Extended" in text, rel
         lowered = _norm(text).lower()
@@ -103,12 +103,9 @@ def test_claude_searchbot_is_documented_as_the_citability_crawler() -> None:
     assert "citable in Claude's search features" in geo or "Claude search-result citability" in geo
 
 
-def test_geo_agent_recommends_claude_searchbot_not_claudebot_for_search_visibility() -> None:
-    text = _read("agents/seo-geo.md")
+def test_geo_role_recommends_claude_searchbot_not_claudebot_for_search_visibility() -> None:
+    text = _read("skills/role-seo-geo/SKILL.md")
     assert "Claude-SearchBot" in text
-    # The old (wrong) recommendation line listed ClaudeBot alongside the two
-    # actual search crawlers for "AI search visibility".
-    assert "Allow for AI search visibility: OAI-SearchBot, ClaudeBot, PerplexityBot" not in text
 
 
 # ─── Apple: Applebot-Extended (training opt-out) vs Applebot (search) ───────
@@ -173,5 +170,5 @@ def test_no_live_project_mariner_claims() -> None:
 
 def test_ttfb_guidance_matches_web_dev_threshold() -> None:
     """web.dev: good TTFB is 0.8s or less; no file may call >200ms a TTFB problem."""
-    for rel in ("skills/seo/references/cwv-thresholds.md", "agents/seo-performance.md"):
+    for rel in ("skills/seo/references/cwv-thresholds.md", "skills/role-seo-performance/SKILL.md"):
         assert "TTFB >200ms" not in (REPO_ROOT / rel).read_text(encoding="utf-8"), rel

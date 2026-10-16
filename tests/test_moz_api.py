@@ -74,10 +74,10 @@ def test_moz_request_keeps_v2_token_header_for_plain_api_keys() -> None:
     assert "Authorization" not in captured["headers"]
 
 
-def test_configured_moz_credentials_are_not_reported_live_verified() -> None:
-    with patch.object(backlinks_auth, "load_config", return_value={"moz_api_key": "mozscape-key"}):
+def test_configured_moz_credentials_are_profile_injected_not_live_verified() -> None:
+    with patch.dict(os.environ, {"MOZ_API_KEY": "mozscape-key"}, clear=True):
         result = backlinks_auth.check_credentials("moz")
 
     assert result["available"] is True
-    assert result["verified"] is False
-    assert "not live-verified" in result["note"]
+    assert result["method"] == "api_key"
+    assert "verified" not in result

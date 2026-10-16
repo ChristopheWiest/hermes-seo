@@ -58,6 +58,12 @@ def test_redact_google_api_key_scrubs_query_params_and_key_literals() -> None:
     assert "AI" + "za" not in redacted
 
 
+def test_google_static_key_comes_from_injected_environment(monkeypatch) -> None:
+    monkeypatch.setenv("GOOGLE_API_KEY", SECRET)
+
+    assert google_auth.get_api_key() == SECRET
+
+
 def test_pagespeed_uses_header_and_redacts_errors() -> None:
     captured: dict = {}
 

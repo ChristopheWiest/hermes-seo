@@ -1,36 +1,7 @@
-# Profound extension setup
+# Profound setup
 
-Profound (https://tryprofound.com) tracks brand mentions across LLMs as
-a time-series: the complement to SE Ranking's on-demand sampling.
+Configure a compatible Profound API integration in Hermes using the provider's current documentation. The former installer wrote credentials to Claude Code settings and is not a supported setup flow here. Store the API key in Hermes' secret/config mechanism and confirm the provider tools are available before using the retained citation-tracking workflow.
 
-## Install
+Profound tracks brand citations over time. API access and plan limits may incur cost; check current terms and obtain approval before paid calls. The source docs compare Profound with SE Ranking, but the comparison is historical and should be checked against current provider capabilities.
 
-```bash
-./extensions/profound/install.sh        # Linux / macOS
-.\extensions\profound\install.ps1       # Windows
-```
-
-Stores `PROFOUND_API_KEY` in `~/.claude/settings.json` env block, mode 0o600.
-
-## Verify
-
-```
-/seo profound citations "Claude SEO"
-```
-
-## Uninstall
-
-```bash
-./extensions/profound/uninstall.sh
-```
-
-## When to use Profound vs. SE Ranking
-
-| Use Profound | Use SE Ranking |
-|---|---|
-| Trend analysis (week-over-week brand mention drift) | Single-shot SoV measurement |
-| ChatGPT + Perplexity deep coverage | All 5 platforms in one call |
-| Alerts on citation rate change | Competitor-keyword gap analysis |
-
-The two are complementary, not redundant. Install both for full AI
-visibility coverage; install one if budget-constrained.
+No live Profound integration has been verified in this fork.

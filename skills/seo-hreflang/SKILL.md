@@ -1,17 +1,8 @@
 ---
 name: seo-hreflang
-description: >
-  Hreflang and international SEO audit, validation, and generation. Detects
-  common mistakes, validates language/region codes, and generates correct
-  hreflang implementations. Use when user says "hreflang", "i18n SEO",
-  "international SEO", "multi-language", "multi-region", or "language tags".
-user-invocable: true
-argument-hint: "[url]"
+description: "Audit international SEO and hreflang implementation."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
 ---
 
 # Hreflang & International SEO
@@ -244,7 +235,7 @@ Load `references/cultural-profiles.md` for pre-built profiles (DACH, Francophone
 
 ## Content Parity Audit
 
-**Command:** `/seo hreflang audit <directory-or-url>`
+**Command:** `hermes-seo:seo-hreflang audit <directory-or-url>`
 
 Audit content parity across all language versions of a site or local content directory.
 

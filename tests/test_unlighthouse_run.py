@@ -153,16 +153,3 @@ def test_normalize_tolerates_garbage_input():
     assert ul.normalize_ci_result([1, 2, "not-a-dict"]) == {
         "routes": [], "route_count": 0, "aggregate_scores": {},
     }
-
-
-# --------------------------------------------------------------------------
-# (c) installer no longer hard-requires the manual skill directory
-# --------------------------------------------------------------------------
-
-
-def test_installer_detects_plugin_install_paths():
-    text = (ROOT / "extensions" / "unlighthouse" / "install.sh").read_text(encoding="utf-8")
-    assert "CLAUDE_PLUGIN_ROOT" in text
-    assert "plugins/cache" in text
-    # The old unconditional abort before any plugin-path check is gone.
-    assert '[ ! -d "${SKILL_DIR}/seo" ] && { echo "✗ claude-seo base not installed."; exit 1; }' not in text

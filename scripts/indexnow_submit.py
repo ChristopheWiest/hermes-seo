@@ -13,8 +13,8 @@ Setup
 2. Place the key in a file named ``<key>.txt`` at the root of your
    site, served at ``https://example.com/<key>.txt``; the file body
    is the key itself. IndexNow crawls this once to prove host ownership.
-3. Pass the key + the key-location URL to this script (or set the
-   ``INDEXNOW_KEY`` and ``INDEXNOW_KEY_LOCATION`` env vars).
+3. Configure ``INDEXNOW_KEY`` in the active Hermes profile. Pass the
+   nonsecret key-location URL to this script or set ``INDEXNOW_KEY_LOCATION``.
 
 Usage
 =====
@@ -22,13 +22,12 @@ Usage
 
     python scripts/indexnow_submit.py \\
         --host example.com \\
-        --key abcd1234… \\
         --key-location https://example.com/abcd1234.txt \\
         --urls https://example.com/new-post https://example.com/updated-page
 
     # Or read URLs from a file (one per line):
     python scripts/indexnow_submit.py \\
-        --host example.com --key abcd1234… --key-location https://… \\
+        --host example.com --key-location https://… \\
         --urls-file changed.txt
 
 Spec: https://www.indexnow.org/documentation
@@ -182,11 +181,6 @@ def main() -> int:
         help="Site host (without scheme), e.g. example.com",
     )
     parser.add_argument(
-        "--key",
-        default=os.environ.get("INDEXNOW_KEY"),
-        help="IndexNow host key (or set INDEXNOW_KEY).",
-    )
-    parser.add_argument(
         "--key-location",
         default=os.environ.get("INDEXNOW_KEY_LOCATION"),
         help="Public URL that serves the key file "
@@ -206,14 +200,16 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    key = os.environ.get("INDEXNOW_KEY")
 
-    if not args.key or not args.key_location:
-        print("Error: --key and --key-location required (or set env vars).",
+    if not key or not args.key_location:
+        print("Error: INDEXNOW_KEY must be configured in the active Hermes profile "
+              "and --key-location (or INDEXNOW_KEY_LOCATION) is required.",
               file=sys.stderr)
         return 2
 
     if args.verify_only:
-        result = verify_key_published(args.host, args.key, args.key_location)
+        result = verify_key_published(args.host, key, args.key_location)
         if args.json:
             json.dump(result, sys.stdout, indent=2)
             sys.stdout.write("\n")
@@ -231,7 +227,7 @@ def main() -> int:
         return 2
 
     # Pre-flight: verify key publication before sending the batch.
-    verify = verify_key_published(args.host, args.key, args.key_location)
+    verify = verify_key_published(args.host, key, args.key_location)
     if not verify["ok"]:
         print(f"Pre-flight failed: {verify.get('error', 'unknown')}",
               file=sys.stderr)
@@ -240,7 +236,7 @@ def main() -> int:
             sys.stdout.write("\n")
         return 1
 
-    result = submit(args.host, args.key, args.key_location, urls)
+    result = submit(args.host, key, args.key_location, urls)
     if args.json:
         json.dump(result, sys.stdout, indent=2)
         sys.stdout.write("\n")

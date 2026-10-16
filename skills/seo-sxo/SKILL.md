@@ -1,17 +1,8 @@
 ---
 name: seo-sxo
-description: >
-  Diagnose search-experience and intent mismatches using SERP page types, user
-  stories, and persona scoring. Use when ranking problems appear intent- or
-  layout-driven.
-user-invocable: true
-argument-hint: "<url> [keyword]"
+description: "Improve search experience across key page types."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  original_author: "Florian Schmitz (Pro Hub Challenge)"
-  version: "2.4.2"
-  category: seo
 ---
 
 # Search Experience Optimization (SXO)
@@ -31,26 +22,26 @@ well-optimized it is.
 
 | Command | Purpose |
 |---------|---------|
-| `/seo sxo <url>` | Full SXO analysis (auto-detect keyword from page) |
-| `/seo sxo <url> <keyword>` | Full SXO analysis for a specific keyword |
-| `/seo sxo wireframe <url>` | Generate IST/SOLL wireframe with concrete placeholders |
-| `/seo sxo personas <url>` | Persona-only scoring (skip SERP analysis) |
+| `hermes-seo:seo-sxo <url>` | Full SXO analysis (auto-detect keyword from page) |
+| `hermes-seo:seo-sxo <url> <keyword>` | Full SXO analysis for a specific keyword |
+| `hermes-seo:seo-sxo wireframe <url>` | Generate IST/SOLL wireframe with concrete placeholders |
+| `hermes-seo:seo-sxo personas <url>` | Persona-only scoring (skip SERP analysis) |
 
 ## Execution Pipeline
 
 ### Step 1: Target Acquisition
 
-1. Fetch the target URL via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run render_page.py <URL> --mode auto` (SPA-aware and SSRF-safe)
-2. Parse with `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run parse_html.py <URL>` to extract: title, H1, meta description,
+1. Fetch the target URL via `hermes seo run render_page.py <URL> --mode auto` (SPA-aware and SSRF-safe)
+2. Parse with `hermes seo run parse_html.py <URL>` to extract: title, H1, meta description,
    headings hierarchy, word count, schema markup, CTAs, media elements
 3. If no keyword provided, extract primary keyword from title tag + H1 overlap
 4. Validate keyword is non-empty before proceeding
 
 ### Step 2: SERP Backwards Analysis
 
-Read `references/page-type-taxonomy.md` for classification rules.
+Load with `skill_view(name="hermes-seo:seo-sxo", file_path="references/page-type-taxonomy.md")` for classification rules.
 
-1. Search Google for the target keyword (WebSearch)
+1. Search Google for the target keyword (web_search)
 2. For each of the top 10 organic results, record:
    - URL and domain authority tier (brand / niche authority / unknown)
    - Page type (classify using taxonomy)
@@ -94,7 +85,7 @@ This is the core SXO insight. Compare target page type against SERP consensus.
 
 ### Step 4: User Story Derivation
 
-Read `references/user-story-framework.md` for the full framework.
+Load with `skill_view(name="hermes-seo:seo-sxo", file_path="references/user-story-framework.md")` for the full framework.
 
 From SERP signals, derive user stories:
 
@@ -132,7 +123,7 @@ Compare the target page against SERP expectations across 7 dimensions:
 
 ### Step 6: Persona-Based Scoring
 
-Read `references/persona-scoring.md` for methodology.
+Load with `skill_view(name="hermes-seo:seo-sxo", file_path="references/persona-scoring.md")` for methodology.
 
 1. Derive 4-7 personas from SERP intent signals:
    - Cluster PAA questions by theme
@@ -148,9 +139,9 @@ Read `references/persona-scoring.md` for methodology.
 
 ### Step 7: Wireframe Generation (Optional)
 
-Only execute when `/seo sxo wireframe` is invoked.
+Only execute when `hermes-seo:seo-sxo wireframe` is invoked.
 
-Read `references/wireframe-templates.md` for templates.
+Load with `skill_view(name="hermes-seo:seo-sxo", file_path="references/wireframe-templates.md")` for templates.
 
 1. Generate IST (current state) wireframe from parsed page structure
 2. Generate SOLL (target state) wireframe based on:
@@ -169,7 +160,7 @@ If DataForSEO MCP tools are available:
 1. **Before any API call**, run cost estimate and confirm with user
 2. Use `serp_organic_live_advanced` for precise SERP data (positions, features, snippets)
 3. Use `kw_data_google_ads_search_volume` for search volume and competition metrics
-4. Fall back to WebSearch if DataForSEO unavailable -- note reduced precision in output
+4. Fall back to web_search if DataForSEO unavailable -- note reduced precision in output
 
 ## SXO Score vs SEO Health Score
 
@@ -184,12 +175,12 @@ The SXO score is **separate** from the main SEO Health Score.
 
 | Finding | Hand Off To |
 |---------|-------------|
-| E-E-A-T gaps in persona scoring | `/seo content` for deep E-E-A-T audit |
-| Missing schema types | `/seo schema` for generation |
-| Local intent detected in SERP | `/seo local` for GBP analysis |
-| Content depth gaps | `/seo page` for deep page analysis |
-| Technical issues found during fetch | `/seo technical` for full audit |
-| Image/media gaps | `/seo images` for optimization |
+| E-E-A-T gaps in persona scoring | `hermes-seo:seo-content` for deep E-E-A-T audit |
+| Missing schema types | `hermes-seo:seo-schema` for generation |
+| Local intent detected in SERP | `hermes-seo:seo-local` for GBP analysis |
+| Content depth gaps | `hermes-seo:seo-page` for deep page analysis |
+| Technical issues found during fetch | `hermes-seo:seo-technical` for full audit |
+| Image/media gaps | `hermes-seo:seo-images` for optimization |
 
 ## Output Format
 
@@ -233,15 +224,15 @@ The SXO score is **separate** from the main SEO Health Score.
 |-------|--------|
 | URL fetch fails | Report error, suggest checking URL accessibility |
 | No keyword provided or detected | Ask user to provide target keyword |
-| WebSearch returns <5 results | Proceed with available data, note limited sample |
+| web_search returns <5 results | Proceed with available data, note limited sample |
 | SERP has no organic results (all ads) | Note highly commercial SERP, analyze ad copy only |
 | Target page is JavaScript-rendered | Note limitation, use available HTML content |
-| DataForSEO cost exceeds threshold | Fall back to WebSearch, notify user |
+| DataForSEO cost exceeds threshold | Fall back to web_search, notify user |
 
 ## Quality Checklist
 
 Before delivering results, verify:
-- [ ] Target URL was fetched via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run render_page.py <URL> --mode auto` (not raw curl/fetch)
+- [ ] Target URL was fetched via `hermes seo run render_page.py <URL> --mode auto` (not raw curl/fetch)
 - [ ] Page type classification uses taxonomy from references
 - [ ] At least 5 SERP results were analyzed
 - [ ] User stories cite specific SERP signals as evidence

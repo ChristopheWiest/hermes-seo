@@ -3,7 +3,7 @@ name: seo-profound
 description: Profound LLM citation tracker (extension). Time-series brand citation rates across ChatGPT, Perplexity, and other LLMs. Pairs with seo-seranking for triangulated AI visibility coverage.
 metadata:
   version: "2.4.2"
-compatibility: "Requires a Profound API key (set PROFOUND_API_KEY by running extensions/profound/install.sh)."
+compatibility: "Requires a Profound API key (set PROFOUND_API_KEY by running Hermes plugin/provider setup)."
 ---
 
 # seo-profound
@@ -15,18 +15,12 @@ are first-class.
 
 ## Prerequisites
 
-- Run `extensions/profound/install.sh` or `install.ps1`.
-- Profound API key.
-- Before any tool call, check `~/.claude/settings.json` has `env.PROFOUND_API_KEY`.
+- Profound API key, stored in Hermes-managed environment/secrets.
+- This extension file is an optional companion reference, not a registered skill.
 
 ## Routing
 
-| Command | Purpose |
-|---|---|
-| `/seo profound citations <brand>` | Current citation rate per LLM + 30-day trend |
-| `/seo profound prompts <brand>` | Top prompts that surface (or fail to surface) the brand |
-| `/seo profound competitors <brand>` | Brands cited alongside `brand` for the same prompts |
-| `/seo profound alerts <brand>` | Spike/drop alerts vs. 7-day baseline |
+Ask the registered `hermes-seo:seo-geo` workflow to assess citation trends using a compatible Profound MCP configured in Hermes. There is no provider-specific `hermes-seo:seo profound` CLI command.
 
 ## Output conventions
 

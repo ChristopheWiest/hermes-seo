@@ -1,45 +1,11 @@
-# Unlighthouse extension setup
+# Unlighthouse setup
 
-[Unlighthouse](https://unlighthouse.dev) is an MIT-licensed multi-page
-Lighthouse runner that produces a single aggregate report. No API
-quota, no credentials, no network egress beyond crawling the target.
+Unlighthouse is a local multi-page Lighthouse runner retained as optional extension material. It does not require a provider API key, but needs Node.js/npm and package/browser dependencies. The former installer that copied a skill into Claude Code is not a supported setup flow in this fork.
 
-## Install
+Check the bundled runner's options and execute it through Hermes' managed runtime when it is allowlisted:
 
 ```bash
-./extensions/unlighthouse/install.sh
-.\extensions\unlighthouse\install.ps1
+hermes seo run unlighthouse_run.py --help
 ```
 
-The installer:
-
-1. Verifies Python 3 + Node 18+.
-2. Pre-warms `unlighthouse@0.13.5` via `npx --yes`.
-3. Copies the `seo-unlighthouse` skill into `~/.claude/skills/`.
-
-No API keys, no settings.json mutation.
-
-## Verify
-
-```
-/seo unlighthouse https://example.com --max-routes 5
-```
-
-## When to use Unlighthouse vs. PageSpeed Insights
-
-| Use Unlighthouse | Use PSI |
-|---|---|
-| Site has 100s of pages and you want every one audited | Single-URL focused audit |
-| Offline / restricted environment | Field data from real Chrome users (CrUX) |
-| CI-driven regression check post-deploy | Quick CLI/web-form check |
-| Free / no quota concern | PSI quota OK for small sites |
-
-PSI uses CrUX field data when available (real users); Unlighthouse
-runs Lighthouse lab tests locally. For trustworthy CWV measurement
-on production traffic, prefer PSI / CrUX.
-
-## Uninstall
-
-```bash
-./extensions/unlighthouse/uninstall.sh
-```
+Unlighthouse performs lab measurements by crawling the target site; keep route limits appropriate and obtain approval before running a broad crawl. No provider or browser compatibility has been verified by this setup note.

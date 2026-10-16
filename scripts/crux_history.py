@@ -271,10 +271,6 @@ def main():
         help="Filter by form factor",
     )
     parser.add_argument(
-        "--api-key",
-        help="Google API key (overrides config/env)",
-    )
-    parser.add_argument(
         "--origin",
         action="store_true",
         help="Force origin-level query (strip path/query)",
@@ -287,9 +283,9 @@ def main():
 
     args = parser.parse_args()
 
-    api_key = args.api_key or get_api_key()
+    api_key = get_api_key()
     if not api_key:
-        print("Error: API key required. Use --api-key or configure GOOGLE_API_KEY.", file=sys.stderr)
+        print("Error: Google API key unavailable. Configure GOOGLE_API_KEY in the Hermes vault and run through hermes_seo_run.", file=sys.stderr)
         sys.exit(1)
 
     target = args.url

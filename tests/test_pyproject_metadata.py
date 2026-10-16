@@ -11,9 +11,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def test_pyproject_has_authors_and_keywords() -> None:
     text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'authors = [' in text
-    assert 'name = "Daniel Agrici"' in text
+    assert 'name = "yuzushi-dev"' in text
     assert "email =" not in text
-    for keyword in ("seo", "claude-code", "schema-markup", "e-e-a-t", "geo"):
+    for keyword in ("seo", "hermes-agent", "schema-markup", "e-e-a-t", "geo"):
         assert f'"{keyword}"' in text
 
 

@@ -69,7 +69,7 @@ After each new post is written, update previously written posts to link to it:
 
 ### Process
 
-1. Read the link matrix from `cluster-plan.json`
+1. read_file the link matrix from `cluster-plan.json`
 2. Identify all posts that should link TO the newly written post
 3. For each of those posts (that is already written):
    a. Open the post file
@@ -97,7 +97,7 @@ Execution can be interrupted and resumed. The resume algorithm:
 
 ### Detection
 
-1. Read `cluster-plan.json` from the current directory
+1. read_file `cluster-plan.json` from the current directory
 2. Scan the output directory for existing post files
 3. Match found files against the plan using:
    - Filename patterns (slug derived from title or keyword)

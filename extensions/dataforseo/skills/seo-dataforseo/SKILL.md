@@ -28,13 +28,13 @@ across 9 API modules with 79+ MCP tools.
 
 This skill requires the DataForSEO extension to be installed:
 ```bash
-./extensions/dataforseo/install.sh
+Hermes plugin/provider setup
 ```
 
 **Check availability:** Before using any DataForSEO tool, verify the MCP server
 is connected by checking if `serp_organic_live_advanced` or any DataForSEO tool
 is available. If tools are not available, inform the user the extension is not
-installed and provide install instructions.
+installed and explain Hermes provider setup.
 
 ## API Credit Awareness
 
@@ -48,7 +48,7 @@ DataForSEO charges per API call. Be efficient:
 
 **Before every DataForSEO MCP call**, run cost estimation:
 ```
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run dataforseo_costs.py check <endpoint> [--count N]
+hermes seo run dataforseo_costs.py check <endpoint> [--count N]
 ```
 
 - If `"status": "approved"` → proceed with the API call
@@ -57,13 +57,13 @@ DataForSEO charges per API call. Be efficient:
 
 **After each API call completes**, log the cost:
 ```
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run dataforseo_costs.py log <endpoint> <actual_cost>
+hermes seo run dataforseo_costs.py log <endpoint> <actual_cost>
 ```
 
 **User commands for cost management:**
-- `/seo dataforseo costs today` → show today's spending breakdown
-- `/seo dataforseo costs summary` → show 7-day spending history
-- `/seo dataforseo costs config --mode threshold --threshold 0.50` → configure approval mode
+- `hermes seo run dataforseo_costs.py today` → show today's spending breakdown
+- `hermes seo run dataforseo_costs.py summary` → show 7-day spending history
+- `hermes seo run dataforseo_costs.py config --mode threshold --threshold 0.50` → configure approval mode
 
 Load `references/cost-tiers.md` for the full pricing table, budget presets, and cost reduction tips.
 
@@ -71,35 +71,35 @@ Load `references/cost-tiers.md` for the full pricing table, budget presets, and 
 
 | Command | What it does |
 |---------|-------------|
-| `/seo dataforseo serp <keyword>` | Google organic SERP results |
-| `/seo dataforseo serp-images <keyword>` | Image elements from the organic SERP (the pinned MCP server has no Google Images tool) |
-| `/seo dataforseo serp-youtube <keyword>` | YouTube search results |
-| `/seo dataforseo youtube <video_id>` | YouTube video deep analysis |
-| `/seo dataforseo keywords <seed>` | Keyword ideas and suggestions |
-| `/seo dataforseo volume <keywords>` | Search volume for keywords |
-| `/seo dataforseo difficulty <keywords>` | Keyword difficulty scores |
-| `/seo dataforseo intent <keywords>` | Search intent classification |
-| `/seo dataforseo trends <keyword>` | Google Trends data |
-| `/seo dataforseo backlinks <domain>` | Full backlink profile |
-| `/seo dataforseo competitors <domain>` | Competitor domain analysis |
-| `/seo dataforseo ranked <domain>` | Ranked keywords for domain |
-| `/seo dataforseo intersection <domains>` | Keyword/backlink overlap |
-| `/seo dataforseo traffic <domains>` | Bulk traffic estimation |
-| `/seo dataforseo subdomains <domain>` | Subdomains with ranking data |
-| `/seo dataforseo top-searches <domain>` | Top queries mentioning domain |
-| `/seo dataforseo onpage <url>` | On-page analysis (Lighthouse + parsing) |
-| `/seo dataforseo tech <domain>` | Technology stack detection |
-| `/seo dataforseo whois <domain>` | WHOIS registration data |
-| `/seo dataforseo content <keyword/url>` | Content analysis and trends |
-| `/seo dataforseo listings <keyword>` | Business listings search |
-| `/seo dataforseo ai-scrape <query>` | ChatGPT web scraper for GEO |
-| `/seo dataforseo ai-mentions <keyword>` | LLM mention tracking for GEO |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to serp <keyword>` | Google organic SERP results |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to serp-images <keyword>` | Image elements from the organic SERP (the pinned MCP server has no Google Images tool) |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to serp-youtube <keyword>` | YouTube search results |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to youtube <video_id>` | YouTube video deep analysis |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to keywords <seed>` | Keyword ideas and suggestions |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to volume <keywords>` | Search volume for keywords |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to difficulty <keywords>` | Keyword difficulty scores |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to intent <keywords>` | Search intent classification |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to trends <keyword>` | Google Trends data |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to backlinks <domain>` | Full backlink profile |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to competitors <domain>` | Competitor domain analysis |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to ranked <domain>` | Ranked keywords for domain |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to intersection <domains>` | Keyword/backlink overlap |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to traffic <domains>` | Bulk traffic estimation |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to subdomains <domain>` | Subdomains with ranking data |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to top-searches <domain>` | Top queries mentioning domain |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to onpage <url>` | On-page analysis (Lighthouse + parsing) |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to tech <domain>` | Technology stack detection |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to whois <domain>` | WHOIS registration data |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to content <keyword/url>` | Content analysis and trends |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to listings <keyword>` | Business listings search |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to ai-scrape <query>` | ChatGPT web scraper for GEO |
+| Use the registered `hermes-seo:seo-dataforseo` workflow to ai-mentions <keyword>` | LLM mention tracking for GEO |
 
 ---
 
 ## SERP Analysis
 
-### `/seo dataforseo serp <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to serp <keyword>`
 
 Fetch live Google organic search results.
 
@@ -111,7 +111,7 @@ Fetch live Google organic search results.
 
 **Output:** Rank, URL, title, description, domain, featured snippets, AI overview references, People Also Ask.
 
-### `/seo dataforseo serp-youtube <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to serp-youtube <keyword>`
 
 Fetch YouTube search results. Valuable for GEO. YouTube mentions correlate most strongly with AI citations.
 
@@ -119,7 +119,7 @@ Fetch YouTube search results. Valuable for GEO. YouTube mentions correlate most 
 
 **Output:** Video title, channel, views, upload date, description, URL.
 
-### `/seo dataforseo youtube <video_id>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to youtube <video_id>`
 
 Deep analysis of a specific YouTube video: info, comments, and subtitles. Treat YouTube mentions as a useful GEO signal, but AI visibility correlations are methodology-dependent.
 
@@ -129,7 +129,7 @@ Deep analysis of a specific YouTube video: info, comments, and subtitles. Treat 
 
 **Output:** Video metadata (title, channel, views, likes, description), top comments with engagement, subtitle/transcript text.
 
-### `/seo dataforseo serp-images <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to serp-images <keyword>`
 
 Report the image elements Google shows in the organic results for a keyword (the
 pinned MCP server has no Google Images tool, so this is not a full Images
@@ -160,7 +160,7 @@ is the closest substitute.
 
 ## Keyword Research
 
-### `/seo dataforseo keywords <seed>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to keywords <seed>`
 
 Generate keyword ideas, suggestions, and related terms from a seed keyword.
 
@@ -170,7 +170,7 @@ Generate keyword ideas, suggestions, and related terms from a seed keyword.
 
 **Output:** Keyword, search volume, CPC, competition level, keyword difficulty, trend.
 
-### `/seo dataforseo volume <keywords>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to volume <keywords>`
 
 Get search volume and metrics for a list of keywords.
 
@@ -180,7 +180,7 @@ Get search volume and metrics for a list of keywords.
 
 **Output:** Keyword, monthly search volume, CPC, competition, monthly trend data.
 
-### `/seo dataforseo difficulty <keywords>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to difficulty <keywords>`
 
 Calculate keyword difficulty scores for ranking competitiveness.
 
@@ -190,7 +190,7 @@ Calculate keyword difficulty scores for ranking competitiveness.
 
 **Output:** Keyword, difficulty score (0-100), interpretation (Easy/Medium/Hard/Very Hard).
 
-### `/seo dataforseo intent <keywords>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to intent <keywords>`
 
 Classify keywords by user search intent.
 
@@ -200,7 +200,7 @@ Classify keywords by user search intent.
 
 **Output:** Keyword, intent type (informational, navigational, commercial, transactional), confidence score.
 
-### `/seo dataforseo trends <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to trends <keyword>`
 
 Analyze keyword trends over time using Google Trends data.
 
@@ -214,7 +214,7 @@ Analyze keyword trends over time using Google Trends data.
 
 ## Domain & Competitor Analysis
 
-### `/seo dataforseo backlinks <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to backlinks <domain>`
 
 Comprehensive backlink profile analysis.
 
@@ -224,7 +224,7 @@ Comprehensive backlink profile analysis.
 
 **Output:** Total backlinks, referring domains, domain rank, spam score, top anchors, new/lost backlinks over time, dofollow ratio, top referring domains.
 
-### `/seo dataforseo competitors <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to competitors <domain>`
 
 Identify competing domains and estimate traffic.
 
@@ -232,7 +232,7 @@ Identify competing domains and estimate traffic.
 
 **Output:** Competitor domains, keyword overlap %, estimated traffic, domain rank, common keywords.
 
-### `/seo dataforseo ranked <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to ranked <domain>`
 
 List keywords a domain ranks for with positions and page data.
 
@@ -242,7 +242,7 @@ List keywords a domain ranks for with positions and page data.
 
 **Output:** Keyword, position, URL, search volume, traffic share, SERP features.
 
-### `/seo dataforseo intersection <domain1> <domain2> [...]`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to intersection <domain1> <domain2> [...]`
 
 Find shared keywords and backlink sources across 2-20 domains.
 
@@ -252,7 +252,7 @@ Find shared keywords and backlink sources across 2-20 domains.
 
 **Output:** Shared keywords with positions per domain, shared backlink sources, unique keywords per domain.
 
-### `/seo dataforseo traffic <domains>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to traffic <domains>`
 
 Estimate organic search traffic for one or more domains.
 
@@ -262,7 +262,7 @@ Estimate organic search traffic for one or more domains.
 
 **Output:** Domain, estimated organic traffic, estimated traffic cost, top keywords.
 
-### `/seo dataforseo subdomains <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to subdomains <domain>`
 
 Enumerate subdomains with their ranking data and traffic estimates.
 
@@ -272,7 +272,7 @@ Enumerate subdomains with their ranking data and traffic estimates.
 
 **Output:** Subdomain, ranked keywords count, estimated traffic, organic cost.
 
-### `/seo dataforseo top-searches <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to top-searches <domain>`
 
 Find the most popular search queries that mention a specific domain in results.
 
@@ -286,7 +286,7 @@ Find the most popular search queries that mention a specific domain in results.
 
 ## Technical / On-Page
 
-### `/seo dataforseo onpage <url>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to onpage <url>`
 
 Run on-page analysis including Lighthouse audit and content parsing.
 
@@ -299,7 +299,7 @@ Run on-page analysis including Lighthouse audit and content parsing.
 
 **Output:** Pages crawled, status codes, meta tags, titles, content size, load times, Lighthouse scores, broken links, resource analysis.
 
-### `/seo dataforseo tech <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to tech <domain>`
 
 Detect technologies used on a domain.
 
@@ -307,7 +307,7 @@ Detect technologies used on a domain.
 
 **Output:** Technology name, version, category (CMS, analytics, CDN, framework, etc.).
 
-### `/seo dataforseo whois <domain>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to whois <domain>`
 
 Retrieve WHOIS registration data.
 
@@ -319,7 +319,7 @@ Retrieve WHOIS registration data.
 
 ## Content & Business Data
 
-### `/seo dataforseo content <keyword/url>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to content <keyword/url>`
 
 Analyze content quality, search for content by topic, and track phrase trends.
 
@@ -329,7 +329,7 @@ Analyze content quality, search for content by topic, and track phrase trends.
 
 **Output:** Content matches with quality scores, sentiment analysis, readability metrics, phrase trend data over time.
 
-### `/seo dataforseo listings <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to listings <keyword>`
 
 Search business listings for local SEO competitive analysis.
 
@@ -343,7 +343,7 @@ Search business listings for local SEO competitive analysis.
 
 ## AI Visibility / GEO
 
-### `/seo dataforseo ai-scrape <query>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to ai-scrape <query>`
 
 Scrape what ChatGPT web search returns for a query. ChatGPT visibility check: see which sources ChatGPT cites for your target keywords.
 
@@ -353,7 +353,7 @@ Scrape what ChatGPT web search returns for a query. ChatGPT visibility check: se
 
 **Output:** ChatGPT response content, cited sources/URLs, referenced domains.
 
-### `/seo dataforseo ai-mentions <keyword>`
+### Use the registered `hermes-seo:seo-dataforseo` workflow to ai-mentions <keyword>`
 
 Track how LLMs mention brands, domains, and topics. Critical for GEO. Measures actual AI visibility across multiple LLM platforms.
 
@@ -391,7 +391,7 @@ When DataForSEO MCP tools are available, other claude-seo skills can leverage li
 
 ## Error Handling
 
-- **MCP server not connected**: Report that DataForSEO extension is not installed or MCP server is unreachable. Suggest running `./extensions/dataforseo/install.sh`
+- **MCP server not connected**: Report that DataForSEO extension is not installed or MCP server is unreachable. Suggest running `Hermes plugin/provider setup`
 - **API authentication failed**: Report invalid credentials. Suggest checking DataForSEO API login/password in MCP config
 - **Rate limit exceeded**: Report the limit hit and suggest waiting before retrying
 - **No results returned**: Report "no data found" for the query rather than guessing. Suggest broadening the query or checking location/language codes

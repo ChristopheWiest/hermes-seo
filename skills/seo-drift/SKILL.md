@@ -1,19 +1,8 @@
 ---
 name: seo-drift
-description: >
-  SEO drift monitoring: capture baselines of SEO-critical elements, detect changes,
-  and track regressions over time. Git for SEO: baseline, diff, and track changes
-  to your on-page SEO. Use when user says "SEO drift", "baseline", "track changes",
-  "did anything break", "SEO regression", "compare SEO", "before and after",
-  "monitor SEO changes", or "deployment check".
-user-invocable: true
-argument-hint: "baseline|compare|history <url>"
+description: "Capture and compare SEO changes over time."
+author: Daniel Agrici
 license: MIT
-metadata:
-  author: AgriciDaniel
-  original_author: "Dan Colta (Pro Hub Challenge)"
-  version: "2.4.2"
-  category: seo
 ---
 
 # SEO Drift Monitor (April 2026)
@@ -26,9 +15,9 @@ Git for your SEO. Capture baselines, detect regressions, track changes over time
 
 | Command | Purpose |
 |---------|---------|
-| `/seo drift baseline <url>` | Capture current SEO state as a "known good" snapshot |
-| `/seo drift compare <url>` | Compare current page state to stored baseline |
-| `/seo drift history <url>` | Show change history and past comparisons |
+| `hermes-seo:seo-drift baseline <url>` | Capture current SEO state as a "known good" snapshot |
+| `hermes-seo:seo-drift compare <url>` | Compare current page state to stored baseline |
+| `hermes-seo:seo-drift history <url>` | Show change history and past comparisons |
 
 ---
 
@@ -75,7 +64,7 @@ recommended actions, and cross-skill references.
 All data is stored locally in SQLite:
 
 ```
-~/.cache/claude-seo/drift/baselines.db
+~/.cache/Hermes SEO/drift/baselines.db
 ```
 
 ### Tables
@@ -95,16 +84,16 @@ Captures the current state of a page and stores it.
 
 **Steps:**
 1. Validate URL (SSRF protection via `google_auth.validate_url()`)
-2. Fetch page via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run fetch_page.py <URL>`
-3. Parse HTML via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run parse_html.py <URL>`
-4. Optionally fetch CWV via `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run pagespeed_check.py <URL>` (use `--skip-cwv` to skip)
+2. Fetch page via `hermes seo run fetch_page.py <URL>`
+3. Parse HTML via `hermes seo run parse_html.py <URL>`
+4. Optionally fetch CWV via `hermes_seo_run {"script":"pagespeed_check.py","args":["<URL>"]}` (use `--skip-cwv` to skip)
 5. Hash HTML body and schema content (SHA-256)
 6. Store snapshot in SQLite
 
 **Execution:**
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_baseline.py <url>
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_baseline.py <url> --skip-cwv
+hermes seo run drift_baseline.py <url>
+hermes seo run drift_baseline.py <url> --skip-cwv
 ```
 
 **Output:** JSON with baseline ID, timestamp, URL, and summary of captured elements.
@@ -126,16 +115,16 @@ Fetches the current page state and diffs it against the most recent baseline.
 
 **Execution:**
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_compare.py <url>
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_compare.py <url> --baseline-id 5
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_compare.py <url> --skip-cwv
+hermes seo run drift_compare.py <url>
+hermes seo run drift_compare.py <url> --baseline-id 5
+hermes seo run drift_compare.py <url> --skip-cwv
 ```
 
 **Output:** JSON with all triggered rules, old/new values, severity, and actions.
 
 After comparison, offer to generate an HTML report:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_report.py <comparison_json_file> --output drift-report.html
+hermes seo run drift_report.py <comparison_json_file> --output drift-report.html
 ```
 
 ---
@@ -146,8 +135,8 @@ Shows all baselines and comparisons for a URL.
 
 **Execution:**
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_history.py <url>
-"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run drift_history.py <url> --limit 10
+hermes seo run drift_history.py <url>
+hermes seo run drift_history.py <url> --limit 10
 ```
 
 **Output:** JSON array of baselines (newest first) with timestamps and comparison summaries.
@@ -160,14 +149,14 @@ When drift is detected, recommend the appropriate specialized skill:
 
 | Finding | Recommendation |
 |---------|----------------|
-| Schema removed or modified | Run `/seo schema <url>` for full validation |
-| CWV regression | Run `/seo technical <url>` for performance audit |
-| Title or meta description changed | Run `/seo page <url>` for content analysis |
-| Canonical changed or removed | Run `/seo technical <url>` for indexability check |
-| Noindex added | Run `/seo technical <url>` for crawlability audit |
-| H1/heading structure changed | Run `/seo content <url>` for E-E-A-T review |
-| OG tags removed | Run `/seo page <url>` for social sharing analysis |
-| Status code changed to error | Run `/seo technical <url>` for full diagnostics |
+| Schema removed or modified | Run `hermes-seo:seo-schema <url>` for full validation |
+| CWV regression | Run `hermes-seo:seo-technical <url>` for performance audit |
+| Title or meta description changed | Run `hermes-seo:seo-page <url>` for content analysis |
+| Canonical changed or removed | Run `hermes-seo:seo-technical <url>` for indexability check |
+| Noindex added | Run `hermes-seo:seo-technical <url>` for crawlability audit |
+| H1/heading structure changed | Run `hermes-seo:seo-content <url>` for E-E-A-T review |
+| OG tags removed | Run `hermes-seo:seo-page <url>` for social sharing analysis |
+| Status code changed to error | Run `hermes-seo:seo-technical <url>` for full diagnostics |
 
 ---
 
@@ -187,7 +176,7 @@ When drift is detected, recommend the appropriate specialized skill:
 
 ## Security
 
-- **All URL fetching** goes through `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run fetch_page.py`, which enforces SSRF protection
+- **All URL fetching** goes through `hermes seo run fetch_page.py`, which enforces SSRF protection
   (blocks private IPs, loopback, reserved ranges, GCP metadata endpoints)
 - **No curl, no subprocess HTTP calls** -- only the project's validated fetch pipeline
 - **All SQLite queries** use parameterized placeholders (`?`), never string interpolation
@@ -199,21 +188,21 @@ When drift is detected, recommend the appropriate specialized skill:
 
 ### Pre/Post Deployment Check
 ```
-/seo drift baseline https://example.com     # Before deploy
+`hermes-seo:seo-drift` baseline https://example.com     # Before deploy
 # ... deploy happens ...
-/seo drift compare https://example.com      # After deploy
+`hermes-seo:seo-drift` compare https://example.com      # After deploy
 ```
 
 ### Ongoing Monitoring
 ```
-/seo drift baseline https://example.com     # Initial capture
+`hermes-seo:seo-drift` baseline https://example.com     # Initial capture
 # ... weeks later ...
-/seo drift compare https://example.com      # Check for drift
-/seo drift history https://example.com      # Review all changes
+`hermes-seo:seo-drift` compare https://example.com      # Check for drift
+`hermes-seo:seo-drift` history https://example.com      # Review all changes
 ```
 
 ### Investigating a Traffic Drop
 ```
-/seo drift compare https://example.com      # What changed?
-/seo drift history https://example.com      # When did it change?
+`hermes-seo:seo-drift` compare https://example.com      # What changed?
+`hermes-seo:seo-drift` history https://example.com      # When did it change?
 ```

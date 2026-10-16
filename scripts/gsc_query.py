@@ -261,10 +261,8 @@ def query_search_analytics(
             )
             result["error"] = (
                 f"Permission denied for property '{site_url}'.{hint} "
-                "The signed-in Google account has no access to it: add that account "
-                "(a service account email, or your own) in Google Search Console > "
-                "Settings > Users and permissions, or use your own account with "
-                "CLAUDE_SEO_GOOGLE_AUTH=adc after gcloud auth application-default login."
+                "Google Search Console is unavailable in this catalog build because "
+                "Hermes does not provide an approved Google OAuth route."
             )
         elif "404" in error_str:
             result["error"] = (

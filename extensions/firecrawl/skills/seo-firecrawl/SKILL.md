@@ -19,22 +19,22 @@ metadata:
 
 This skill requires the Firecrawl extension to be installed:
 ```bash
-./extensions/firecrawl/install.sh
+Hermes plugin/provider setup
 ```
 
 **Check availability:** Before using any Firecrawl tool, verify the MCP server
 is connected by checking if `firecrawl_scrape` or any Firecrawl tool
 is available. If tools are not available, inform the user the extension is not
-installed and provide install instructions.
+installed and explain Hermes provider setup.
 
 ## Quick Reference
 
 | Command | Purpose |
 |---------|---------|
-| `/seo firecrawl crawl <url>` | Full-site crawl with content extraction |
-| `/seo firecrawl map <url>` | Discover site structure (URLs only, fast) |
-| `/seo firecrawl scrape <url>` | Single-page scrape with JS rendering |
-| `/seo firecrawl search <query> <url>` | Search within a crawled site |
+| Ask `hermes-seo:seo-audit` to crawl `<url>` using Firecrawl MCP | Full-site crawl with content extraction |
+| Ask `hermes-seo:seo-audit` to map `<url>` using Firecrawl MCP | Discover site structure (URLs only, fast) |
+| Ask `hermes-seo:seo-audit` to scrape `<url>` using Firecrawl MCP | Single-page scrape with JS rendering |
+| Ask `hermes-seo:seo-audit` to search `<query>` in `<url>` using Firecrawl MCP | Search within a crawled site |
 
 ## Commands
 
@@ -60,7 +60,7 @@ metadata, and links for all discovered pages.
 4. **Content inventory**: Extract all page titles, meta descriptions, H1s at scale
 5. **SPA/JS-rendered sites**: Firecrawl renders JavaScript, solving the Issue #11 problem
 
-**Example orchestration for `/seo audit`:**
+**Example orchestration for `hermes-seo:seo-audit`:**
 ```
 1. firecrawl_map(url) -> get all URLs (fast, no content)
 2. Filter to top 50 most important pages (homepage, key sections)
@@ -158,7 +158,7 @@ related to a topic without crawling everything.
 ## Cross-Skill Integration
 
 ### With seo-audit (full audit)
-When Firecrawl is available during `/seo audit`:
+When Firecrawl is available during `hermes-seo:seo-audit`:
 1. Use `firecrawl_map` to discover all site URLs
 2. Compare with XML sitemap (seo-sitemap) to find orphan/missing pages
 3. Select top pages for deep analysis
@@ -190,7 +190,7 @@ When Firecrawl is available during `/seo audit`:
 
 | Error | Cause | Resolution |
 |-------|-------|-----------|
-| `FIRECRAWL_API_KEY not set` | MCP not configured | Run `./extensions/firecrawl/install.sh` |
+| `FIRECRAWL_API_KEY not set` | MCP not configured | Run `Hermes plugin/provider setup` |
 | `402 Payment Required` | Credits exhausted | Check usage at firecrawl.dev/app, upgrade plan |
 | `429 Too Many Requests` | Rate limited | Wait 60s, reduce crawl concurrency |
 | `408 Timeout` | Page too slow to render | Increase `timeout`, try without JS rendering |
@@ -199,4 +199,4 @@ When Firecrawl is available during `/seo audit`:
 **Graceful fallback:** If Firecrawl is unavailable, inform the user and suggest:
 1. Use `fetch_page.py` for single-page analysis (no API cost)
 2. Use `WebFetch` tool for basic HTML retrieval
-3. Install Firecrawl: `./extensions/firecrawl/install.sh`
+3. Install Firecrawl: `Hermes plugin/provider setup`

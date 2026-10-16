@@ -502,10 +502,6 @@ def main():
         help="Analysis strategy (default: both)",
     )
     parser.add_argument(
-        "--api-key",
-        help="Google API key (overrides config/env)",
-    )
-    parser.add_argument(
         "--crux-only",
         action="store_true",
         help="Only fetch CrUX field data (skip PSI Lighthouse)",
@@ -528,11 +524,11 @@ def main():
 
     args = parser.parse_args()
 
-    api_key = args.api_key or get_api_key()
+    api_key = get_api_key()
 
     if args.crux_only:
         if not api_key:
-            print("Error: CrUX API requires an API key. Use --api-key or configure GOOGLE_API_KEY.", file=sys.stderr)
+            print("Error: Google API key unavailable. Configure GOOGLE_API_KEY in the Hermes vault and run through hermes_seo_run.", file=sys.stderr)
             sys.exit(1)
         result = query_crux(args.url, api_key, form_factor=args.form_factor)
     elif args.psi_only:

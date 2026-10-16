@@ -9,129 +9,128 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint:
-    name: Python Syntax Check
-    runs-on: ubuntu-latest
+  catalog-validation:
+    name: Hermes 0.22.2 validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
-          python-version: "3.10"
+          persist-credentials: false
 
-      - name: Check Python syntax
+      - name: Check out Hermes Agent 0.22.2
+        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
+        with:
+          repository: NousResearch/hermes-agent
+          ref: d923a5eb487a17c0a68801bba9ef0f56c81040a8 # v0.22.2
+          fetch-depth: 0
+          persist-credentials: false
+          path: .ci/hermes-agent
+
+      - name: Prepare the locked Hermes environment
+        uses: ./.ci/hermes-agent/.github/actions/setup-pm
+        with:
+          toolchain: python
+          extras: '[]'
+          python-cache-dependency-glob: .ci/hermes-agent/uv.lock
+
+      - name: Stage the committed plugin tree
+        shell: bash
         run: |
-          mapfile -t PYFILES < <(git ls-files 'scripts/*.py')
-          python3 -m py_compile "${PYFILES[@]}"
-          echo "All ${#PYFILES[@]} scripts passed syntax check"
+          set -euo pipefail
+          plugin_under_test="$RUNNER_TEMP/hermes-seo"
+          mkdir -p "$plugin_under_test"
+          git archive --format=tar HEAD | tar -xf - -C "$plugin_under_test"
+          printf 'PLUGIN_UNDER_TEST=%s\n' "$plugin_under_test" >> "$GITHUB_ENV"
+
+      - name: Verify the Hermes release
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/hermes-agent rev-parse HEAD)" = d923a5eb487a17c0a68801bba9ef0f56c81040a8
+          test "$(git -C .ci/hermes-agent describe --tags --exact-match)" = v0.22.2
+          hermes --version | grep -F 'Hermes Agent v0.22.2'
+
+      - name: Run the catalog admission validator
+        shell: bash
+        run: hermes plugins validate "$PLUGIN_UNDER_TEST" --install-deps --json
+
+      - name: Check runtime discovery
+        shell: bash
+        run: hermes plugins doctor "$PLUGIN_UNDER_TEST" --ci
 
   test:
-    name: Test suite (manifests + sync_flow)
-    runs-on: ubuntu-latest
-    env:
-      # gh CLI honors GH_TOKEN automatically; sync_flow.py uses gh for auth.
-      # Without this, anonymous API requests hit GitHub's 60/hr per-IP rate
-      # limit and the sync_flow dry-run test fails on shared-runner IPs.
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
-          python-version: "3.10"
+          persist-credentials: false
 
-      - name: Install runtime + test deps
-        # Tests import scripts that import url_safety.py (and others), which
-        # require the full runtime dependency set at module-import time. The
-        # prior minimal install (pytest + beautifulsoup4) broke when Phase J/K
-        # tests added imports through url_safety -> requests. Installing from
-        # requirements.txt matches the documented user install path and keeps
-        # CI in sync with the runtime contract.
-        run: pip install -r requirements.txt pytest
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
 
-      - name: Run pytest
-        env:
-          CLAUDE_SEO_NETWORK_TESTS: "1"
-          GH_TOKEN: ${{ github.token }}
-        run: pytest tests/ -v
+      - name: Install test dependencies
+        run: python -m pip install -r requirements.txt pytest
+
+      - name: Compile Python sources
+        run: python -m compileall -q __init__.py hooks scripts
+
+      - name: Run offline test suite
+        run: python -m pytest -q -k "not test_render_page_never_mode_against_example_com"
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Audit declared dependencies
+        run: |
+          python -m pip install pip-audit
+          python -m pip_audit -r requirements.txt --progress-spinner off
 
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Scan tracked files for leaked credentials
+      - name: Scan tracked files for credential patterns
+        shell: bash
         run: |
-          set -uo pipefail
-          # High-signal credential patterns. Test fixtures and documented
-          # placeholders are allowlisted; auth-setup.md ships a private-key
-          # placeholder (BEGIN PRIVATE KEY\n...) that is not a real key.
-          PATTERN='AIza[0-9A-Za-z_-]{35}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|gh[ous]_[A-Za-z0-9]{36}|AKIA[0-9A-Z]{16}|GOCSPX-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}'
-          HITS=$(git ls-files -z \
-            | xargs -0 grep -nIEH "$PATTERN" 2>/dev/null \
-            | grep -vE 'DUMMY|EXAMPLE|YOUR_|REDACTED|placeholder|<[A-Z_]+>' \
-            | grep -vE '^tests/|/auth-setup\.md:' || true)
-          if [ -n "$HITS" ]; then
-            echo "::error::Potential leaked credentials in tracked files:"
-            echo "$HITS"
+          set -euo pipefail
+          pattern='AIza[0-9A-Za-z_-]{35}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|gh[ous]_[A-Za-z0-9]{36}|AKIA[0-9A-Z]{16}|GOCSPX-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}'
+          hits=$(git grep -nEI "$pattern" -- ':!tests/**' ':!**/auth-setup.md' || true)
+          hits=$(printf '%s\n' "$hits" | grep -vE 'DUMMY|EXAMPLE|YOUR_|REDACTED|placeholder|<[A-Z0-9_-]+>' || true)
+          if [[ -n "$hits" ]]; then
+            printf 'Potential credential patterns:\n%s\n' "$hits"
             exit 1
           fi
-          echo "Secret scan clean: no credentials detected in tracked files."
-
-  portability:
-    name: Portability (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      # Report both legs independently; a failure on one platform should not
-      # hide the result on the other.
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.10"
-
-      - name: Install runtime + test deps
-        run: pip install -r requirements.txt pytest
-
-      - name: Run pytest
-        # The whole suite, not a hand-picked subset. The tests that assert
-        # POSIX mode bits (the executable bit, chmod 0o600/0o644) skip on
-        # Windows via os.name; everything else must hold on every platform.
-        env:
-          CLAUDE_SEO_NETWORK_TESTS: "1"
-          GH_TOKEN: ${{ github.token }}
-        run: pytest tests/ -v
-
-  dep-audit:
-    name: Dependency audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.10"
-
-      - name: Install pip-audit
-        run: pip install pip-audit
-
-      - name: Audit requirements.txt against the PyPI advisory database
-        # requirements.txt documents CVE floors per dependency in comments, but
-        # nothing verified them; this closes that loop. Because the pins are
-        # bounded ranges rather than exact versions, pip-audit resolves the
-        # newest allowed release, so a newly published advisory can turn this
-        # job red without a commit to the repo. That is the intended signal:
-        # it means a floor in requirements.txt needs raising. To land an
-        # unavoidable advisory in the meantime, add
-        # `--ignore-vuln GHSA-xxxx-xxxx-xxxx` with a comment naming the reason.
-        run: pip-audit -r requirements.txt --progress-spinner off

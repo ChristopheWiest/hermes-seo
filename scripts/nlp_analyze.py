@@ -261,7 +261,7 @@ def analyze_url(
         resp = safe_requests_get(
             url,
             timeout=30,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; ClaudeSEO/1.7 NLP Analyzer)"},
+            headers={"User-Agent": "Mozilla/5.0 (compatible; HermesSEO/1.7 NLP Analyzer)"},
         )
         resp.raise_for_status()
         html = decode_response_text(resp)
@@ -306,7 +306,6 @@ def main():
         default="entities,sentiment,classify",
         help="Comma-separated features: entities, sentiment, classify, moderate (default: entities,sentiment,classify)",
     )
-    parser.add_argument("--api-key", help="API key override")
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
@@ -318,9 +317,9 @@ def main():
     features = [f.strip() for f in args.features.split(",")]
 
     if args.url:
-        result = analyze_url(args.url, features=features, api_key=args.api_key)
+        result = analyze_url(args.url, features=features)
     else:
-        result = analyze_text(args.text, features=features, api_key=args.api_key)
+        result = analyze_text(args.text, features=features)
 
     if result.get("error"):
         print(f"Error: {result['error']}", file=sys.stderr)

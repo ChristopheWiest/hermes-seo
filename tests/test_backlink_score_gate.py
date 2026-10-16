@@ -136,7 +136,7 @@ def test_no_skill_or_reference_instructs_capping_a_score_for_missing_data() -> N
         re.I,
     )
     offenders = []
-    for root in (REPO_ROOT / "skills", REPO_ROOT / "agents"):
+    for root in (REPO_ROOT / "skills",):
         for path in root.rglob("*.md"):
             if pattern.search(path.read_text(encoding="utf-8")):
                 offenders.append(str(path.relative_to(REPO_ROOT)))

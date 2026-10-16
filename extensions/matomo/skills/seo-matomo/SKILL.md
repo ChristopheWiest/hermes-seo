@@ -3,7 +3,7 @@ name: seo-matomo
 description: Matomo Reporting API extension. Self-hosted or Matomo Cloud analytics as a GA4 alternative or complement. Organic traffic, landing pages, device / country breakdowns, referrers, search keywords. Triggers on "Matomo", "self-hosted analytics", "analytics ohne Google", "GA4 alternative", "Matomo Reporting", "Piwik".
 metadata:
   version: "2.4.2"
-compatibility: "Requires a Matomo instance URL and API token in ~/.config/claude-seo/matomo.json (0600), or MATOMO_URL / MATOMO_API_TOKEN / MATOMO_SITE_ID in the environment. Run extensions/matomo/install.sh to configure."
+compatibility: "Requires MATOMO_URL, MATOMO_API_TOKEN or MATOMO_TOKEN, and optionally MATOMO_SITE_ID or MATOMO_IDSITE in the active Hermes profile vault."
 ---
 
 # seo-matomo
@@ -15,25 +15,24 @@ against Matomo Cloud and self-hosted instances.
 
 ## Prerequisites
 
-- Run `extensions/matomo/install.sh` or `install.ps1`.
 - A Matomo instance URL (https://analytics.example.com).
 - A Matomo API `token_auth` with `view` access on the sites you analyze.
 - (Optional) A default `idSite` to avoid passing `--site-id` on every call.
+- Store all supported values in the active Hermes profile vault. The native
+  tool resolves them with `agent.secret_scope.get_secret()`.
 
 ## Routing
 
-| Command | Underlying script |
-|---|---|
-| `/seo matomo check` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py --check` |
-| `/seo matomo organic [site-id]` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py organic --site-id <id>` |
-| `/seo matomo top-pages` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py top-pages` |
-| `/seo matomo device` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py device` |
-| `/seo matomo country` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py country` |
-| `/seo matomo referrers` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py referrers` |
-| `/seo matomo keywords` | `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_report.py keywords` |
+This extension file is an optional companion reference, not a separately
+registered Hermes skill. For bundled API access, ask for approval for the
+external request and call `hermes_seo_run` with arguments such as
+`{"script":"matomo_auth.py","args":["--check","--json"]}` or
+`{"script":"matomo_report.py","args":["organic","--json"]}`. There is no
+CLI or plugin-file credential setup path.
 
-All commands accept `--days` (default 28), `--limit`, `--site-id`, and
-`--json`. The site ID falls back to `MATOMO_SITE_ID` from settings.
+All reports accept `--days` (default 28), `--limit`, `--site-id`, and
+`--json`. Without `--site-id`, the tool injects `MATOMO_SITE_ID` or
+`MATOMO_IDSITE` from the active profile vault.
 
 ## When this skill applies
 
@@ -54,43 +53,29 @@ All commands accept `--days` (default 28), `--limit`, `--site-id`, and
   performance metrics.
 - For AI Overview / GEO citability work, route to `seo-geo`. Matomo
   offers no LLM-specific signals.
-- During `/seo audit`, the orchestrator spawns the `seo-matomo` agent
-  (analogous to `seo-google`) whenever `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py
-  --check` succeeds. Both agents can be active simultaneously when the
-  user has both GA4 and Matomo configured.
+- During `hermes-seo:seo-audit`, use Matomo inline when
+  `hermes_seo_run` with
+  `{"script":"matomo_auth.py","args":["--check","--json"]}` succeeds.
 
 ## Self-hosted instance on a private address
 
-Every Matomo request goes through claude-seo's SSRF guard: the instance URL
+Every Matomo request goes through Hermes SEO SSRF guard: the instance URL
 is validated and DNS-pinned, and a redirect off the instance is refused.
-Private, loopback, and link-local addresses are refused by default. When the
-user's instance lives on one (`http://matomo.internal:8080`,
-`http://192.168.1.20`, `http://localhost:8080`), tell them to name it in the
-`CLAUDE_SEO_LOCAL_TARGETS` allowlist:
-
-```bash
-export CLAUDE_SEO_LOCAL_TARGETS="matomo.internal:8080"
-```
-
-Entries are `host` or `host:port`, comma-separated, matched exactly. The
-allowlist covers only the top-level instance URL; redirect targets and every
-other host stay fail-closed, and cloud metadata addresses are refused even
-when listed. Never suggest disabling the guard or editing `url_safety.py`:
-the allowlist is the supported route. Details in
-`extensions/matomo/docs/MATOMO-SETUP.md` and SECURITY.md.
+Private, loopback, and link-local addresses are refused by default. For a
+trusted private Matomo instance, store the exact host or host and port in
+`HERMES_SEO_LOCAL_TARGETS` in the active Hermes profile vault. The native tool
+injects it only for Matomo scripts. Never suggest disabling the guard or
+editing `url_safety.py`.
 
 ## Error Handling
 
-- Refused by the SSRF guard (error names `CLAUDE_SEO_LOCAL_TARGETS`): the
-  instance is on a private address that has not been allowlisted. Give the
-  user the exact export line from the error, which already carries the right
-  `host:port`.
+- Refused by the SSRF guard: report that the exact Matomo host must be added to
+  the active profile's `HERMES_SEO_LOCAL_TARGETS` value.
 - Refused redirect: the instance answered a 30x pointing at another host.
   `MATOMO_URL` is pointing at a redirector rather than at the Reporting API.
   Ask the user for the URL their instance actually serves the API from.
-- Missing credentials: report which env vars / config keys are unset and
-  remind the user to run `extensions/matomo/install.sh` or
-  `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run matomo_auth.py --setup`.
+- Missing configuration: report which supported vault names are unset. Never
+  request values in tool arguments or write a plugin configuration file.
 - HTTP 401/403 from Matomo: the token lacks view access for the given
   site. Verify the token scope in Matomo Administration -> Personal ->
   Security -> API Tokens. The skill never logs the token.

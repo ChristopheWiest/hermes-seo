@@ -15,7 +15,7 @@ Generate an image from a text prompt.
 
 **Returns:** Image data + file path (saved to `~/Documents/nanobanana_generated/`)
 
-**Example usage in Claude Code:**
+**Example usage in Hermes:**
 ```
 User: "Generate a sunset over mountains in watercolor style"
 → Claude calls gemini_generate_image with prompt
@@ -23,13 +23,13 @@ User: "Generate a sunset over mountains in watercolor style"
 ```
 
 ### gemini_edit_image
-Edit an existing image with text instructions.
+patch an existing image with text instructions.
 
 **Parameters:**
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | `imagePath` | string | Yes | Path to the image file to edit |
-| `prompt` | string | Yes | Edit instructions |
+| `prompt` | string | Yes | patch instructions |
 
 **Returns:** Modified image data + file path
 
@@ -92,8 +92,8 @@ Reset session context and conversation history.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GOOGLE_AI_API_KEY` | Yes | API key from https://aistudio.google.com/apikey |
-| `NANOBANANA_MODEL` | No | Override default model from the installed MCP package |
+| `GOOGLE_AI_API_KEY` | Yes | Hermes profile-scoped secret injected by the parent native tool |
+| `NANOBANANA_MODEL` | No | Nonsecret override with a verified model ID |
 
 ## Output Directory
 All generated images are saved to: `~/Documents/nanobanana_generated/`

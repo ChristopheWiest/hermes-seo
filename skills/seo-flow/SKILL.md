@@ -1,29 +1,19 @@
 ---
 name: seo-flow
-description: >
-  FLOW framework integration: evidence-led SEO using the Find → Leverage →
-  Optimize → Win loop. Surfaces stage-specific AI prompts from the FLOW
-  knowledge base (41 prompts, CC BY 4.0). Use when user says "FLOW", "FLOW
-  framework", "seo flow", "evidence-led SEO", "find leverage optimize win",
-  or wants stage-specific SEO prompts.
-user-invocable: true
-argument-hint: "[stage] [url|topic]"
-license: MIT
-metadata:
-  author: AgriciDaniel
-  version: "2.4.2"
-  category: seo
+description: "Apply the FLOW framework to SEO planning."
+author: Daniel Agrici
+license: CC BY 4.0
 ---
 
 # FLOW Framework: Find · Leverage · Optimize · Win
 
-FLOW is an evidence-led SEO operating model built for the AI-search era. Claude SEO
+FLOW is an evidence-led SEO operating model built for the AI-search era. Hermes SEO
 integrates the FLOW prompt library (41 prompts across 5 stages) so every analysis can
 be driven by structured, evidence-backed AI prompts rather than improvised queries.
 
 > Framework and prompts © Daniel Agrici, CC BY 4.0: github.com/AgriciDaniel/flow
 
-**Runtime context:** Load `references/flow-framework.md` on every `/seo flow` activation.
+**Runtime context:** Load `references/flow-framework.md` on every `hermes-seo:seo-flow` activation.
 Load prompt files on demand, only for the stage the user requests.
 
 ---
@@ -32,57 +22,57 @@ Load prompt files on demand, only for the stage the user requests.
 
 | Command | What it does |
 |---------|-------------|
-| `/seo flow` | Show FLOW overview + stage menu |
-| `/seo flow find [url\|topic]` | Find-stage: keyword research, gap analysis, SERP intent mapping (5 prompts) |
-| `/seo flow leverage [url]` | Leverage-stage: backlink strategy, off-site authority (1 prompt) |
-| `/seo flow optimize [url]` | Optimize-stage: select 2-3 most relevant of 21 prompts based on context |
-| `/seo flow win [url]` | Win-stage: BOFU, conversion rate, dual-surface scorecard (3 prompts) |
-| `/seo flow local [url]` | Local-stage: GBP optimization, meta, title tags, local audits (11 prompts) |
-| `/seo flow prompts` | Full index of all 41 prompts (stage, name, trigger conditions) |
-| `/seo flow sync` | Pull latest prompt files from github.com/AgriciDaniel/flow |
+| `hermes-seo:seo-flow` | Show FLOW overview + stage menu |
+| `hermes-seo:seo-flow find [url\|topic]` | Find-stage: keyword research, gap analysis, SERP intent mapping (5 prompts) |
+| `hermes-seo:seo-flow leverage [url]` | Leverage-stage: backlink strategy, off-site authority (1 prompt) |
+| `hermes-seo:seo-flow optimize [url]` | Optimize-stage: select 2-3 most relevant of 21 prompts based on context |
+| `hermes-seo:seo-flow win [url]` | Win-stage: BOFU, conversion rate, dual-surface scorecard (3 prompts) |
+| `hermes-seo:seo-flow local [url]` | Local-stage: GBP optimization, meta, title tags, local audits (11 prompts) |
+| `hermes-seo:seo-flow prompts` | Full index of all 41 prompts (stage, name, trigger conditions) |
+| `hermes-seo:seo-flow sync` | Pull latest prompt files from github.com/AgriciDaniel/flow |
 
 ---
 
 ## Orchestration Logic
 
-### On `/seo flow` (no sub-command)
-1. Read `references/flow-framework.md`
+### On `hermes-seo:seo-flow` (no sub-command)
+1. Load `references/flow-framework.md` with `skill_view(name="hermes-seo:seo-flow", file_path="references/flow-framework.md")`.
 2. Show the FLOW stage overview with a one-line description of each stage
 3. Ask: which stage matches the user's current situation?
 
-### On `/seo flow find [url|topic]`
-1. Read all files in `references/prompts/find/`
+### On `hermes-seo:seo-flow find [url|topic]`
+1. Load `references/prompts/README.md` with `skill_view`, then load each find-stage file with `skill_view(name="hermes-seo:seo-flow", file_path="references/prompts/find/<prompt-file>.md")`.
 2. Apply each prompt to the URL or topic
-3. Cross-reference: "For deeper SERP clustering, see `/seo cluster <seed-keyword>`"
+3. Cross-reference: "For deeper SERP clustering, see `hermes-seo:seo-cluster <seed-keyword>`"
 
-### On `/seo flow leverage [url]`
-1. Read the file in `references/prompts/leverage/`
+### On `hermes-seo:seo-flow leverage [url]`
+1. Load the leverage prompt with `skill_view(name="hermes-seo:seo-flow", file_path="references/prompts/leverage/<prompt-file>.md")`.
 2. Apply to the URL's current backlink context
-3. Cross-reference: "For raw backlink data, see `/seo backlinks <url>`"
+3. Cross-reference: "For raw backlink data, see `hermes-seo:seo-backlinks <url>`"
 
-### On `/seo flow optimize [url]`
-1. Read all file names in `references/prompts/optimize/`
-2. Read prior analysis context (URL, industry vertical, any prior skill output in conversation)
+### On `hermes-seo:seo-flow optimize [url]`
+1. Load `references/prompts/README.md` with `skill_view` to see the optimize prompt filenames.
+2. Use prior analysis context from this conversation (URL, industry vertical, and any earlier skill output).
 3. Select 2-3 most relevant prompts; load only those files
-4. Apply selected prompts; note the others are accessible via `/seo flow prompts`
-5. Cross-reference: "For full content quality analysis, see `/seo content <url>` and `/seo geo <url>`"
+4. Apply selected prompts; note the others are accessible via `hermes-seo:seo-flow prompts`
+5. Cross-reference: "For full content quality analysis, see `hermes-seo:seo-content <url>` and `hermes-seo:seo-geo <url>`"
 
-### On `/seo flow win [url]`
-1. Read all files in `references/prompts/win/`
+### On `hermes-seo:seo-flow win [url]`
+1. Load `references/prompts/README.md` with `skill_view`, then each win-stage prompt with `skill_view(name="hermes-seo:seo-flow", file_path="references/prompts/win/<prompt-file>.md")`.
 2. Apply each prompt to the URL's conversion and BOFU context
-3. Cross-reference: "For SXO persona scoring, see `/seo sxo <url>`"
+3. Cross-reference: "For SXO persona scoring, see `hermes-seo:seo-sxo <url>`"
 
-### On `/seo flow local [url]`
-1. Read all files in `references/prompts/local/`
+### On `hermes-seo:seo-flow local [url]`
+1. Load `references/prompts/README.md` with `skill_view`, then each local-stage prompt with `skill_view(name="hermes-seo:seo-flow", file_path="references/prompts/local/<prompt-file>.md")`.
 2. Apply to the URL's local SEO context
-3. Cross-reference: "For full local SEO analysis, see `/seo local <url>` and `/seo maps [command]`"
+3. Cross-reference: "For full local SEO analysis, see `hermes-seo:seo-local <url>` and `hermes-seo:seo-maps [command]`"
 
-### On `/seo flow prompts`
-1. Read `references/prompts/README.md`
+### On `hermes-seo:seo-flow prompts`
+1. Load `references/prompts/README.md` with `skill_view(name="hermes-seo:seo-flow", file_path="references/prompts/README.md")`.
 2. Display the full index: all 41 prompts with stage, name, trigger conditions
 
-### On `/seo flow sync`
-1. Run: `"${CLAUDE_PLUGIN_ROOT}/scripts/claude-seo" run sync_flow.py`
+### On `hermes-seo:seo-flow sync`
+1. Run: `hermes seo run sync_flow.py`
 2. Display the JSON summary (files added, updated, unchanged)
 3. Show attribution notice after sync completes
 
@@ -103,20 +93,20 @@ Always surface exactly 2-3 prompts. State which prompts you chose and why.
 ## Reference Files
 
 Load on-demand, do NOT load all at startup:
-- `references/flow-framework.md`: FLOW operating model (load on every `/seo flow` activation)
+- `references/flow-framework.md`: FLOW operating model (load on every `hermes-seo:seo-flow` activation)
 - `references/bibliography.md`: Evidence sources; load when citing studies or statistics
-- `references/prompts/README.md`: Prompt index; load for `/seo flow prompts`
-- `references/prompts/find/`: 5 prompts; load for `/seo flow find`
-- `references/prompts/leverage/`: 1 prompt; load for `/seo flow leverage`
-- `references/prompts/optimize/`: 21 prompts; load selectively for `/seo flow optimize`
-- `references/prompts/win/`: 3 prompts; load for `/seo flow win`
-- `references/prompts/local/`: 11 prompts; load for `/seo flow local`
+- `references/prompts/README.md`: Prompt index; load for `hermes-seo:seo-flow prompts`
+- `references/prompts/find/`: 5 prompts; load for `hermes-seo:seo-flow find`
+- `references/prompts/leverage/`: 1 prompt; load for `hermes-seo:seo-flow leverage`
+- `references/prompts/optimize/`: 21 prompts; load selectively for `hermes-seo:seo-flow optimize`
+- `references/prompts/win/`: 3 prompts; load for `hermes-seo:seo-flow win`
+- `references/prompts/local/`: 11 prompts; load for `hermes-seo:seo-flow local`
 
 ---
 
 ## Attribution
 
-Every `/seo flow` activation (any sub-command) outputs before analysis:
+Every `hermes-seo:seo-flow` activation (any sub-command) outputs before analysis:
 
 ```
 Framework and prompts © Daniel Agrici, CC BY 4.0: github.com/AgriciDaniel/flow
@@ -130,7 +120,7 @@ Do not omit or modify the attribution.
 
 | Scenario | Action |
 |----------|--------|
-| `references/flow-framework.md` missing | "FLOW reference files not synced. Run: `/seo flow sync`" |
-| Prompt file missing | "Run `/seo flow sync` to pull the latest prompts from the FLOW repo." |
+| `references/flow-framework.md` missing | "FLOW reference files not synced. Run: `hermes-seo:seo-flow sync`" |
+| Prompt file missing | "Run `hermes-seo:seo-flow sync` to pull the latest prompts from the FLOW repo." |
 | `sync_flow.py` network error | Display the script's stderr. Check rate limits: `gh api rate_limit`. |
 | `sync_flow.py` auth error | Run `gh auth login` then retry. |
