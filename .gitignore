@@ -192,3 +192,6 @@ id_ed25519.*
 # Local scratch and generated decks (never shipped)
 tmp/
 outputs/
+
+# Local BRAG video work (never ship)
+.brag/
