@@ -1,8 +1,10 @@
 # Hermes SEO
 
-[![Play the Hermes SEO promo video](assets/hermes-seo-promo.jpg)](assets/hermes-seo-promo.mp4)
-
-▶ [Open or download the 20-second promo (MP4)](assets/hermes-seo-promo.mp4)
+<p align="center">
+  <a href="assets/hermes-seo-promo.mp4">
+    <img src="assets/hermes-seo-promo.gif" width="960" alt="Hermes SEO promo: 45 SEO skills, technical audits and schema feedback">
+  </a>
+</p>
 
 Hermes SEO 0.1.0 packages the SEO analysis workflows, their Python utilities, and specialist roles from [Claude SEO v2.4.2](https://github.com/AgriciDaniel/claude-seo) as a native Hermes plugin. The port keeps 25 workflow skills plus the `seo` router, 19 delegated role skills, 56 utility scripts, Schema.org templates, and optional provider integrations. Claude SEO was created by Daniel Agrici and remains attributed under its MIT license.
 
