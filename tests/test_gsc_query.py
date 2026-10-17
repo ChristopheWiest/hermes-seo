@@ -64,8 +64,11 @@ def test_sitemaps_strip_deprecated_indexed_counts_and_point_to_url_inspection() 
     assert "URL Inspection API" in sitemap["indexation_note"]
 
 
-def test_seo_google_docs_identify_url_inspection_as_indexation_truth() -> None:
+def test_seo_google_docs_preserve_disabled_indexation_policy() -> None:
     text = (REPO_ROOT / "skills" / "seo-google" / "SKILL.md").read_text(encoding="utf-8")
-    sitemap_section = text[text.index("### `/seo google sitemaps <property>`"):]
-    assert "URL Inspection API" in sitemap_section
-    assert "indexation truth" in sitemap_section
+    assert "Google Search Console" in text
+    assert "disabled in this catalog build" in text
+    assert "Do not run the retained GSC" in text
+    assert "Sitemap submission or sitemap reports do not confirm that a URL is indexed." in text
+    assert "Historically, URL Inspection is the reference for per-URL indexation status" in text
+    assert "it is unavailable in this catalog build" in text
