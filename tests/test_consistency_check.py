@@ -68,6 +68,22 @@ def test_runtime_invocation_checker_recognizes_hermes_cli_and_rejects_missing_sc
     ]
 
 
+def test_agent_checker_ignores_historical_changelog_but_rejects_active_dead_refs(
+    monkeypatch,
+):
+    changelog = "CHANGELOG.md"
+    active_doc = "docs/COMMANDS.md"
+    monkeypatch.setattr(
+        consistency_check,
+        "read",
+        lambda path: "See `agents/seo-google.md`" if path in {changelog, active_doc} else "",
+    )
+
+    assert consistency_check.check_agent_refs(set(), [changelog, active_doc]) == [
+        f"{active_doc}: dead agent ref agents/seo-google.md"
+    ]
+
+
 def _locked_paths() -> list:
     lock = Path(REPO) / consistency_check.LOCK_PATH
     return [line.split()[1] for line in lock.read_text(encoding="utf-8").splitlines()
