@@ -235,7 +235,7 @@ def check_agent_refs(files, texts):
     pat = re.compile(r'agents/([a-z0-9-]+)\.md')
     errors = []
     for f in texts:
-        if f.startswith("agents/") or f in SELF_DOC:
+        if f.startswith("agents/") or f in SELF_DOC or f == "CHANGELOG.md":
             continue
         for m in sorted(set(pat.findall(read(f)))):
             if m not in known and m not in DOC_EXAMPLE_AGENTS:

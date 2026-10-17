@@ -96,6 +96,10 @@ Indexing scripts and do not configure service-account files, ADC, refresh
 tokens, or browser OAuth. Their reference material describes upstream API
 semantics only and is not an executable setup path for this port.
 
+Sitemap submission or sitemap reports do not confirm that a URL is indexed.
+Historically, URL Inspection is the reference for per-URL indexation status,
+but it is unavailable in this catalog build.
+
 ---
 
 ## YouTube (Video SEO)
