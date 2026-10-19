@@ -21,7 +21,7 @@ weasyprint>=70.0,<71.0                # PYSEC-2026-3940 fixed in 70.0
 openpyxl>=3.1.5,<4.0.0                # No known CVEs (Excel export)
 
 # Google API dependencies (for seo-google skill)
-google-api-python-client>=2.196.0,<3.0.0   # No known CVEs
+google-api-python-client>=2.201.0,<3.0.0   # No known CVEs
 google-auth>=2.62.0,<3.0.0                  # No known CVEs
 google-auth-httplib2>=0.4.4,<1.0.0           # Compatibility floor for current google-auth stack
 google-analytics-data>=0.18.0,<1.0.0         # No known CVEs
