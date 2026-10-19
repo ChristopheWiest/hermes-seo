@@ -8,7 +8,7 @@
 
 Hermes SEO is a native Hermes plugin port of SEO workflows from [Claude SEO v2.4.2](https://github.com/AgriciDaniel/claude-seo). It includes 25 workflow skills plus the `seo` router, 19 specialist role skills, 56 utility scripts, Schema.org templates, and optional integrations. Claude SEO was created by Daniel Agrici. See [credits](assets/media-credits.md) for upstream attribution and media notes.
 
-This is an independent community project maintained at [yuzushi-dev/hermes-seo](https://github.com/yuzushi-dev/hermes-seo), separate from the official Nous Research and Hermes Agent plugins. Release [v0.1.0](https://github.com/yuzushi-dev/hermes-seo/releases/tag/v0.1.0) is available, and the community catalog pull request [#139998](https://github.com/NousResearch/hermes-agent/pull/139998) is open.
+This independent community plugin is maintained at [yuzushi-dev/hermes-seo](https://github.com/yuzushi-dev/hermes-seo). It is listed in the [Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/hermes-seo). Release [v0.1.0](https://github.com/yuzushi-dev/hermes-seo/releases/tag/v0.1.0) remains available.
 
 ## What it does
 
